@@ -1,5 +1,6 @@
 // This file is the entry point, use it to start up all services
 const fs = require('fs');
+const path = require('path');
 const chalk = require('chalk');
 
 // Write a default .ENV if one does not exist
@@ -21,7 +22,7 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 
-app.use(express.static('../game/'));
+app.use(express.static(path.join(__dirname, "../game")));
 
 // HTTP
 if (process.env.HTTP_PORT) {
