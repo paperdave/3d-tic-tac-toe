@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <title>3D TicTacToe</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         * {box-sizing: border-box;}
         body {
@@ -24,9 +25,70 @@
             font-family: Roboto, sans-serif;
             font-size: 3em;
         }
+        main p {
+            text-align: center;
+            font-family: Roboto, sans-serif;
+            font-size: 1.5em;
+            color: white;
+
+        }
     </style>
 </head>
 <body>
-    <header>3d Tic Tac Toe</header>
+    <header>game</header>
+    <main id="screen-name">
+        <p>enter your name</p>
+        <p>
+            <br> <input id="name-input-field" type="text">
+            <br> <button id="name-continue-button">continue</button>
+
+        </p>
+
+    </main>
+    <main id=screen-joincode style="display:none;">
+        <p>enter the code <span id=gamecode style="font-weight:bold;">00000</span> to join</p>
+        <p style="opacity:0.5">
+            or
+        </p>
+        <p>
+            join another game
+            <br> <input type="text">
+        </p>
+    </main>
+
+    <script>
+        var $ = document.querySelector.bind(document);
+        var $$ = (q) => Array.from(document.querySelectorAll(q));
+        EventTarget.prototype.on = EventTarget.prototype.addEventListener
+        EventTarget.prototype.off = EventTarget.prototype.removeEventListener
+        EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent
+        HTMLElement.prototype.hide = function(){this.style.display="none";}
+        HTMLElement.prototype.show = function(){this.style.display="";}
+
+        var gamecode = null;
+        var id = null;
+        var state = "await name";
+
+        $("#name-continue-button").on("click", () => {
+            if(state == "await name") {
+                state = "await game room";
+                $("#screen-name").hide();
+                $("#screen-joincode").show();
+            }
+        });
+
+        var socket = io();
+        socket.on("socket code", (code) => {
+            id = code;
+        })
+        socket.on("init game code", (code) => {
+            gamecode = code;
+
+            $("#gamecode").innerHTML = gamecode;
+        })
+        socket.on("player join", (code) => {
+            console.log(code)
+        })
+    </script>
 </body>
 </html>
