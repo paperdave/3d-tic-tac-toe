@@ -31,18 +31,23 @@ const io = require('socket.io')();
 app.use(express.static(path.join(__dirname, "../game")));
 
 function TTCPreGame() {
-    let uid, destroy, players, join, leave;
+    let uid, destroy, players, join, leave, leader;
 
     players = [];
     uid = genGameCode();
+    leader = null;
     destroy = () => {
-        //console.log(chalk.red("PreGame " + uid + " empty, destroying"));
+        console.log(chalk.red("PreGame " + uid + " empty, destroying"));
         delete availableGames[uid];
     };
     join = (socket) => {
         players.forEach(player => {
-            player.emit("new player", {uid: socket.id, name: player.name});
+            player.emit("new player", {uid: socket.id, name: socket.name});
         });
+        if(players.length == 1) {
+            leader = players[0];
+            leader.emit("you are leader");
+        }
         players.push(socket);
     };
     leave = (socket) => {
@@ -87,7 +92,7 @@ const games = {};
 
 function newTTCPreGame() {
     const game = TTCPreGame();
-    availableGames[game.uid] = availableGames;
+    availableGames[game.uid] = game;
     console.log(chalk.green("PreGame " + game.uid + " created"));
     return game;
 }
@@ -112,14 +117,27 @@ io.on("connection", (socket) => {
     socket.on("name is", (name) => {
         // todo: check validness
         if(socket.name === null) {
-            name;
+            socket.name = name;
         }
-    })
+    });
     socket.on("disconnect", () => {
         if (state == "pregame" || state == "pregame/owner") {
             pregame.leave(socket);
         }
-    })
+    });
+    socket.on("join game room", (gameroom) => {
+        if (availableGames[gameroom]) {
+
+            if(pregame) pregame.leave(socket);
+            pregame = availableGames[gameroom];
+            pregame.join(socket);
+
+            socket.emit("join game room;success", pregame.players.filter(x => x.id!==socket.id).map(x => ({
+                name: x.name,
+                id: x.id
+            })));
+        }
+    });
 });
 
 // HTTP

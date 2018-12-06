@@ -32,31 +32,86 @@
             color: white;
 
         }
+        input[type=text] {
+            padding: 1em;
+            padding-left: 0;
+            text-indent: 1em;
+            color: white;
+            background: #17567a;
+            border: 3px solid #FFF;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.356);
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.63);
+        }
+        button {
+            margin-top: 0.5em;
+            padding: 0.5em;
+            color: black;
+            border: none;
+            background: #ffffff;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.356);
+        }
+        .almost-sides {
+            max-width: calc(100vw - 25px);
+            margin: auto;
+        }
+
+        #hud {
+            position: fixed;
+            font-family: Roboto, sans-serif;
+            top: 0;
+            right: 0;
+            color: white;
+            width: 100%;
+        }
+        #name-in-corner-name {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
     </style>
 </head>
 <body>
+    <div id="hud">
+        <div style="max-width:500px;margin:auto;position:relative;">
+            <div id="name-in-corner-name"></div>
+        </div>
+    </div>
+    
     <header>game</header>
+    
     <main id="screen-name">
-        <p>enter your name</p>
-        <p>
-            <br> <input id="name-input-field" type="text">
-            <br> <button id="name-continue-button">continue</button>
-
-        </p>
+        <p>Enter your Name</p>
+        <form onsubmit="handleNameSubmit(); return false;">
+            <p>
+                <br> <input id="name-input-field" autocomplete="off" placeholder="Your Name" type="text">
+                <br> <button type="submit">Continue</button>
+                
+            </p>
+        </form>
 
     </main>
     <main id=screen-joincode style="display:none;">
-        <p>enter the code <span id=gamecode style="font-weight:bold;">00000</span> to join</p>
+        <p class="almost-sides">Enter the code <span id=gamecode style="font-weight:bold;">00000</span> elsewhere to join this device.</p>
         <p style="opacity:0.5">
             or
         </p>
-        <p>
-            join another game
-            <br> <input type="text">
-        </p>
+        <form onsubmit="handleJoinByCode(); return false;">
+            <p>
+                Join Another Game
+                <br>
+                <br> <input id="join-game-code" autocomplete="off" placeholder="Code" type="text" style="width:150px;">
+                <button type="submit">Join</button>
+        
+            </p>
+        </form>
     </main>
 
     <script>
+        // basically jquery
         var $ = document.querySelector.bind(document);
         var $$ = (q) => Array.from(document.querySelectorAll(q));
         EventTarget.prototype.on = EventTarget.prototype.addEventListener
@@ -64,31 +119,60 @@
         EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent
         HTMLElement.prototype.hide = function(){this.style.display="none";}
         HTMLElement.prototype.show = function(){this.style.display="";}
+        // end basically jquery
 
         var gamecode = null;
         var id = null;
         var state = "await name";
+        var name = null;
+        var room = null;
+        var lobby_players = [];
 
-        $("#name-continue-button").on("click", () => {
-            if(state == "await name") {
+        function handleNameSubmit() {
+            if (state == "await name") {
                 state = "await game room";
+
+                name = $("#name-input-field").value;
+                socket.emit("name is", name);
+
+                $("#name-in-corner-name").innerHTML = name;
                 $("#screen-name").hide();
                 $("#screen-joincode").show();
             }
-        });
+        }
 
         var socket = io();
         socket.on("socket code", (code) => {
             id = code;
-        })
+        });
         socket.on("init game code", (code) => {
             gamecode = code;
 
             $("#gamecode").innerHTML = gamecode;
-        })
-        socket.on("player join", (code) => {
+        });
+        socket.on("new player", (code) => {
             console.log(code)
+        });
+
+        function handleJoinByCode() {
+            if(state == "await game room") {
+
+                room = $("#join-game-code").value;
+                socket.emit("join game room", room);
+
+                state = "joining room; await validation";
+            }
+            $("#screen-joincode").hide();
+        }
+        socket.on("join game room;success", (current_players) => {
+            lobby_players = current_players;
+            console.log("joined room " + room);
+        });
+
+        socket.on("message", () => {
+            
         })
+
     </script>
 </body>
 </html>
