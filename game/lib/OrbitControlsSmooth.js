@@ -497,7 +497,7 @@ THREE.OrbitControls = function (object, domElement) {
     }
 
     function touchstart(event) {
-
+        
         if (scope.enabled === false) return;
 
         switch (event.touches.length) {
@@ -630,16 +630,17 @@ THREE.OrbitControls = function (object, domElement) {
 
     }
 
-    this.domElement.addEventListener('contextmenu', function (event) { event.preventDefault(); }, false);
+    // editied
+    // this.domElement.addEventListener('contextmenu', function (event) { event.preventDefault(); }, false);
     this.domElement.addEventListener('mousedown', onMouseDown, false);
-    this.domElement.addEventListener('mousewheel', onMouseWheel, false);
-    this.domElement.addEventListener('DOMMouseScroll', onMouseWheel, false); // firefox
+    // this.domElement.addEventListener('mousewheel', onMouseWheel, false);
+    // this.domElement.addEventListener('DOMMouseScroll', onMouseWheel, false); // firefox
 
-    this.domElement.addEventListener('touchstart', touchstart, false);
-    this.domElement.addEventListener('touchend', touchend, false);
-    this.domElement.addEventListener('touchmove', touchmove, false);
+    this.domElement.addEventListener('touchstart', touchstart, { passive: false });
+    this.domElement.addEventListener('touchend', touchend, { passive: false });
+    this.domElement.addEventListener('touchmove', touchmove, { passive: false });
 
-    window.addEventListener('keydown', onKeyDown, false);
+    // window.addEventListener('keydown', onKeyDown, false);
 
     // force an update at start
     this.update();

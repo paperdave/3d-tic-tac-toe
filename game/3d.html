@@ -18,42 +18,114 @@
 
 <body>
     <script src="./lib/three.js"></script>
-
     <script src="./lib/OrbitControlsSmooth.js"></script>
 
     <script>
         var scene = new THREE.Scene();
+        var raycaster = new THREE.Raycaster();
         var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
+        var mouse = new THREE.Vector2();
+        var selectedObject;
+
         var renderer = new THREE.WebGLRenderer({ alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
         var GameCube = function(x,z,y) {
             var group = new THREE.Group();
+            var self = {};
+
+            var color = {r: 1, g: 1, b: 1};
 
             //Create main object
             var mesh_geo = new THREE.BoxGeometry(1, 1, 1);
             var mesh_mat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
             var mesh = new THREE.Mesh(mesh_geo, mesh_mat);
+            mesh.scale.multiplyScalar(0.75);
             group.add(mesh);
     
             //Create outline object
             var outline_geo = new THREE.BoxGeometry(1, 1, 1);
             var outline_mat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
             var outline = new THREE.Mesh(outline_geo, outline_mat);
-            outline.scale.multiplyScalar(1.125);
+            outline.scale.multiplyScalar(1.125 * 0.75);
             group.add(outline);
+
+            mesh.isCube = true;
+            mesh.outlineMesh = true;
+            mesh.cubeEntity = self;
 
             group.position.x = x;
             group.position.y = y;
             group.position.z = z;
 
-            return {
-                model: group,
+            self.model = group;
+            self.hoverOn = function() {
+                outline_mat.color.r = 0.3;
+                outline_mat.color.g = 0.3;
+                outline_mat.color.b = 0.3;
+
+                mesh_mat.color = {
+                    r: color.r * 0.9,
+                    g: color.g * 0.9,
+                    b: color.b * 0.9,
+                }
             };
+            self.hoverOff = function() {
+                outline_mat.color.r = 0;
+                outline_mat.color.g = 0;
+                outline_mat.color.b = 0;
+
+                mesh_mat.color = color;
+            }
+            return self;
         }
 
+        function onTouchMove(event) {
+            var x, y;
+            if (event.changedTouches) {
+                x = event.changedTouches[0].pageX;
+                y = event.changedTouches[0].pageY;
+            } else {
+                x = event.clientX;
+                y = event.clientY;
+            }
+            mouse.x = (x / window.innerWidth) * 2 - 1;
+            mouse.y = - (y / window.innerHeight) * 2 + 1;
+            checkIntersection();
+        }
+        
+        function onWindowResize() {
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function checkIntersection() {
+
+            raycaster.setFromCamera(mouse, camera);
+            var intersects = raycaster.intersectObjects([scene], true);
+            if (intersects.length > 0) {
+
+                if(intersects[0].object.isCube) {
+                    if(selectedObject !== intersects[0].object) {
+                        if(selectedObject) selectedObject.cubeEntity.hoverOff();
+                        intersects[0].object.cubeEntity.hoverOn();   
+                    }
+                    selectedObject = intersects[0].object;
+                }
+                
+            } else {
+                if (selectedObject) selectedObject.cubeEntity.hoverOff();
+                selectedObject = null;
+            }
+        }
+
+        window.addEventListener('resize', onWindowResize, false);
+        window.addEventListener('mousemove', onTouchMove);
+        window.addEventListener('touchmove', onTouchMove);
 
         scene.add(GameCube( 0, 0, 0).model);
         scene.add(GameCube( 2, 0, 0).model);
@@ -64,12 +136,31 @@
         scene.add(GameCube( 0,-2, 0).model);
         scene.add(GameCube( 2,-2, 0).model);
         scene.add(GameCube(-2,-2, 0).model);
+        scene.add(GameCube( 0, 0, 2).model);
+        scene.add(GameCube( 2, 0, 2).model);
+        scene.add(GameCube(-2, 0, 2).model);
+        scene.add(GameCube( 0, 2, 2).model);
+        scene.add(GameCube( 2, 2, 2).model);
+        scene.add(GameCube(-2, 2, 2).model);
+        scene.add(GameCube( 0,-2, 2).model);
+        scene.add(GameCube( 2,-2, 2).model);
+        scene.add(GameCube(-2,-2, 2).model);
+        scene.add(GameCube( 0, 0,-2).model);
+        scene.add(GameCube( 2, 0,-2).model);
+        scene.add(GameCube(-2, 0,-2).model);
+        scene.add(GameCube( 0, 2,-2).model);
+        scene.add(GameCube( 2, 2,-2).model);
+        scene.add(GameCube(-2, 2,-2).model);
+        scene.add(GameCube( 0,-2,-2).model);
+        scene.add(GameCube( 2,-2,-2).model);
+        scene.add(GameCube(-2,-2,-2).model);
 
         camera.position.z = 10;
 
         var controls = new THREE.OrbitControls(camera);
         controls.noZoom = true;
-        controls.damping = 0.1;
+        controls.noPan = true
+        controls.damping = 0.095;
 
         var animate = function () {
             requestAnimationFrame(animate);
