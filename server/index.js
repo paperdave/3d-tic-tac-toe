@@ -4,10 +4,6 @@ const path = require('path');
 const chalk = require('chalk');
 const uuidv4 = require('uuid/v4');
 
-function genGameCode() {
-    return Math.random().toFixed(5).substring(2);
-}
-
 // Write a default .ENV if one does not exist
 if (!fs.existsSync(".env")) {
     let dotenvdata = "# Application Configuration File\n"
@@ -30,113 +26,141 @@ const io = require('socket.io')();
 
 app.use(express.static(path.join(__dirname, "../game")));
 
-function TTCPreGame() {
-    let uid, destroy, players, join, leave, leader;
+const sockets = {};
+const rooms = {};
 
-    players = [];
-    uid = genGameCode();
-    leader = null;
-    destroy = () => {
-        console.log(chalk.red("PreGame " + uid + " empty, destroying"));
-        delete availableGames[uid];
-    };
-    join = (socket) => {
-        players.forEach(player => {
-            player.emit("new player", {uid: socket.id, name: socket.name});
-        });
-        if(players.length == 1) {
-            leader = players[0];
-            leader.emit("you are leader");
-        }
-        players.push(socket);
-    };
-    leave = (socket) => {
-        players = players.filter(x => x.id != socket.id);
-        if(players.length===0) destroy();
-    };
-
-    return {
-        uid,
-        destroy,
-        leave,
-        join,
-        players
-    };
+const ensureTypeData = {
+    "not undefined": (x) => typeof x !== "undefined",
+    "string": (x) => typeof x === "string",
+    "number": (x) => typeof x === "number",
+    "boolean": (x) => typeof x === "boolean",
+    "object": (x) => typeof x === "object" && x !== null,
+    "array": (x) => Array.isArray(x),
 }
-function TTCGame(players, colors) {
-    let board, placeItem, turn, uid;
 
-    uid = uuidv4();
-    turn = 0;
-    board = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => 0)));
-    
-    place = (x,y,z,player) => {
-        board[x][y][z] = player;
-        turn++;
-        if(turn >= players) turn = 0;
-    };
+function is(input, type) {
+    return ensureTypeData[type](input);
+}
 
+function ensure(bool, reason, socket) {
+    if(!bool) {
+        console.log("Kicked: " + (reason || "<no reson set>"));
+        socket.disconnect();
+    }
+    return !bool;
+}
+
+function SocketToPlayer(socket) {
     return {
-        placeItem,
-        
-        board,
-        turn,
-        colors,
-        players,
-        uid,
+        id: socket.id,
+        name: socket.name
     }
 }
 
-const availableGames = {};
-const games = {};
+function joinRoom(socket, room) {
+    //create a room if needed
+    if(!(room in rooms)) {
+        rooms[room] = {
+            players: [],
+            state: "lobby",
+            id: room,
+            leader: socket
+        };
+        socket.emit("youre leader");
+    }
+    // if room is too big notify
+    if (rooms[room].players >= 4) {
+        socket.emit("room too big");
+        return;
+    }
+    // notify
+    rooms[room].players.forEach(sock => {
+        sock.emit("player join", SocketToPlayer(socket));
+    });
 
-function newTTCPreGame() {
-    const game = TTCPreGame();
-    availableGames[game.uid] = game;
-    console.log(chalk.green("PreGame " + game.uid + " created"));
-    return game;
-}
-function newTTCGame() {
-    const game = TTCPreGame();
-    games[game.uid] = availableGames;
-    return game;
-}
+    // send player list
+    socket.emit("player list", rooms[room].players.map(SocketToPlayer));
 
+    // add
+    rooms[room].players.push(socket);
+
+}
+function notifyRoomOfName(socket, room, name) {
+    // notify
+    rooms[room].players.forEach(sock => {
+        if(sock === socket) { return; };
+        sock.emit("player name set", socket.id, name);
+    });
+}
+function leaveRoom(socket, room) {
+    // notify
+    rooms[room].players.forEach(sock => {
+        if (sock === socket) { return; };
+
+        sock.emit("player leave", socket.id);
+    });
+
+    // remove
+    rooms[room].players = rooms[room].players.filter(x => x.id !== socket.id);
+    
+    // if empty destroy room
+    if(rooms[room].players.length === 0) {
+        delete rooms[room];
+    } else {
+        // reassign leader
+        if(socket.id === rooms[room].leader.id) {
+            rooms[room].leader = rooms[room].players[0];
+            rooms[room].leader.emit("youre leader");
+        }
+
+    }
+
+}
 
 io.on("connection", (socket) => {
     // make a game code for this game
     socket.id = uuidv4();
     socket.name = null;
-    let state = "pregame/owner";
-    let game = null;
-    let pregame = newTTCPreGame();
-    socket.emit("init game code", pregame.uid);
-    socket.emit("socket code", socket.id);
-    pregame.join(socket);
+    
+    sockets[socket.id] = socket;
 
-    socket.on("name is", (name) => {
-        // todo: check validness
-        if(socket.name === null) {
-            socket.name = name;
+    var room = null;
+    var T = (bool, reason) => ensure(bool, reason, socket);
+
+    socket.emit("socket code", socket.id);
+
+    socket.on("join room", (newroom) => {
+        if(0
+            || T(room === null, "[join room] Already in a room")
+            || T(is(newroom, "string"), "[join room] Invalid Type")
+            || T(newroom.length < 6, "[join room] Invalid Length")
+            || T(/[^a-zA-Z0-9]/.exec(newroom) === null, "[join room] Invalid Chars")
+        ) return socket.disconnect();
+
+        console.log("joining room " + newroom);
+        room = newroom;
+
+        joinRoom(socket, room);
+    });
+    socket.on("name entry", (newname) => {
+        if(0
+            || T(socket.name === null, "[name entry] Name Already Set")
+            || T(is(newname, "string"), "[name entry] Invalid Type")
+            || T(newname.length < 16, "[name entry] Invalid Length")
+            || T(/[^a-zA-Z0-9 ]/.exec(newname) === null, "[name entry] Invalid Characters")
+        ) return;
+
+        console.log("setting name " + newname);
+        socket.name = newname;
+
+        if(room) {
+            notifyRoomOfName(socket, room, socket.name);
         }
     });
     socket.on("disconnect", () => {
-        if (state == "pregame" || state == "pregame/owner") {
-            pregame.leave(socket);
-        }
-    });
-    socket.on("join game room", (gameroom) => {
-        if (availableGames[gameroom]) {
+        if(room) leaveRoom(socket, room);
 
-            if(pregame) pregame.leave(socket);
-            pregame = availableGames[gameroom];
-            pregame.join(socket);
-
-            socket.emit("join game room;success", pregame.players.filter(x => x.id!==socket.id).map(x => ({
-                name: x.name,
-                id: x.id
-            })));
-        }
+        delete sockets[socket.id];
     });
 });
 

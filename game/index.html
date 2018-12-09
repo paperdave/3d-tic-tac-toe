@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-    <title>3D TicTacToe</title>
+    <title>oh tree, oh (s)</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * {box-sizing: border-box;}
         body {
             margin: 0;
-            background: linear-gradient(0deg, #7992ff 0%, #79ceff 100%);
             
             width: 100vw;
             height: 100vh;
@@ -25,12 +24,14 @@
             font-family: Roboto, sans-serif;
             font-size: 3em;
         }
-        main p {
+        p {
             text-align: center;
             font-family: Roboto, sans-serif;
-            font-size: 1.5em;
+            font-size: 1.35em;
             color: white;
-
+        }
+        .center {
+            text-align: center;
         }
         input[type=text] {
             padding: 1em;
@@ -67,111 +68,234 @@
             color: white;
             width: 100%;
         }
-        #name-in-corner-name {
+        #name-in-corner {
             position: absolute;
             top: 10px;
             right: 20px;
         }
+        .state {display:none;}
+
+        #join-url {
+            color: black;
+            background: white;
+            padding: 1.25em 0;
+            box-shadow: 0 2px 4px #00000040;
+        }
+        .bg {
+            z-index: -1;
+            position: fixed;
+            top:0;
+            left:0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(0deg, #7992ff 0%, #79ceff 100%);
+        }
+        .player-icon {
+            display: block;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px #00000040;
+            opacity: 0.9;
+            margin: auto;
+            border: 2px solid black;
+        }
+        .player-info {
+            flex-grow: 1;
+        }
+        .players {
+            flex-direction: row;
+            display: flex;
+            width: 100%;
+            margin: auto;
+            margin-bottom: 2em;
+        }
+        .player-label {
+            font-family: Roboto, sans-serif;
+            color: white;
+            margin-top: 0.75em;
+            text-align: center;
+        }
+        .unjoined .player-label {
+            opacity: 0.4;
+        }
+        .unjoined .player-icon {
+            opacity: 0.7;
+        }
+
+        .red {
+            background: rgb(255, 66, 66);
+        }
     </style>
 </head>
 <body>
+    <div class="bg"></div>
+
     <div id="hud">
         <div style="max-width:500px;margin:auto;position:relative;">
-            <div id="name-in-corner-name"></div>
+            <div id="name-in-corner"></div>
         </div>
     </div>
     
     <header>game</header>
-    
-    <main id="screen-name">
-        <p>Enter your Name</p>
-        <form onsubmit="handleNameSubmit(); return false;">
-            <p>
-                <br> <input id="name-input-field" autocomplete="off" placeholder="Your Name" type="text">
-                <br> <button type="submit">Continue</button>
-                
-            </p>
-        </form>
 
-    </main>
-    <main id=screen-joincode style="display:none;">
-        <p class="almost-sides">Enter the code <span id=gamecode style="font-weight:bold;">00000</span> elsewhere to join this device.</p>
-        <p style="opacity:0.5">
-            or
-        </p>
-        <form onsubmit="handleJoinByCode(); return false;">
+    <section class="state show:name-screen">
+        <p>Enter your Name</p>
+        <form submit="handleNameEnter">
             <p>
-                Join Another Game
-                <br>
-                <br> <input id="join-game-code" autocomplete="off" placeholder="Code" type="text" style="width:150px;">
-                <button type="submit">Join</button>
-        
+                <input type="text" placeholder="Name" id="name-input">
+                <button type="submit">Continue</button>
             </p>
         </form>
-    </main>
+    </section>
+
+    <section class="state show:lobby">
+        <p class="almost-sides">Send this URL to a friend, and wait for them to join</p>
+        <p id="join-url">{the url}</p>
+        <div class="room-details">
+            <p>Waiting for Players</p>
+            <div class="players">
+                <div class="player-info unjoined player1i">
+                    <div class="player-icon"></div>
+                    <div class="player-label">(Open)</div>
+                </div>
+                <div class="player-info unjoined player2i">
+                    <div class="player-icon"></div>
+                    <div class="player-label">(Open)</div>
+                </div>
+                <div class="player-info unjoined player3i">
+                    <div class="player-icon"></div>
+                    <div class="player-label">(Open)</div>
+                </div>
+                <div class="player-info unjoined player4i">
+                    <div class="player-icon"></div>
+                    <div class="player-label">(Open)</div>
+                </div>
+            </div>
+        </div>
+        <p>
+            <button>Start Game</button>
+        </p>
+    </section>
 
     <script>
         // basically jquery
         var $ = document.querySelector.bind(document);
         var $$ = (q) => Array.from(document.querySelectorAll(q));
+        var $class = (q) => Array.from(document.getElementsByClassName(q));
         EventTarget.prototype.on = EventTarget.prototype.addEventListener
         EventTarget.prototype.off = EventTarget.prototype.removeEventListener
         EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent
         HTMLElement.prototype.hide = function(){this.style.display="none";}
-        HTMLElement.prototype.show = function(){this.style.display="";}
+        HTMLElement.prototype.show = function(){this.style.display="initial";}
         // end basically jquery
 
-        var gamecode = null;
-        var id = null;
-        var state = "await name";
+        // form safe
+        $$("form[submit]").forEach(item => {
+            var func = item.getAttribute("submit");
+            item.onsubmit = function() {
+                try {
+                    window[func]();
+                } catch (error) {
+                    console.log(error);
+                }
+                return false;
+            };
+        })
+        // end form safe
+    </script>
+
+    <script>
+        var state = "null";
         var name = null;
-        var room = null;
-        var lobby_players = [];
-
-        function handleNameSubmit() {
-            if (state == "await name") {
-                state = "await game room";
-
-                name = $("#name-input-field").value;
-                socket.emit("name is", name);
-
-                $("#name-in-corner-name").innerHTML = name;
-                $("#screen-name").hide();
-                $("#screen-joincode").show();
-            }
-        }
-
         var socket = io();
+        var room = null;
+        var players = null;
+        var isLeader = false;
+
         socket.on("socket code", (code) => {
             id = code;
+            console.info("Socket ID: ", id);
         });
-        socket.on("init game code", (code) => {
-            gamecode = code;
-
-            $("#gamecode").innerHTML = gamecode;
+        socket.on("player list", (list) => {
+            players = list;
+            console.info("Player List: ", list);
         });
-        socket.on("new player", (code) => {
-            console.log(code)
+        socket.on("player join", (newPlayer) => {
+            players.push(newPlayer);
+            console.info("Player Joined: ", newPlayer);
         });
+        socket.on("player name set", (playerId, playerName) => {
 
-        function handleJoinByCode() {
-            if(state == "await game room") {
+            players.some((x) => {
+                if(x.id === playerId) {
+                    x.name = playerName;
 
-                room = $("#join-game-code").value;
-                socket.emit("join game room", room);
+                    return true;
+                }
+            });
+            console.info("Player Name Set: ", playerId, "=", playerName);
+        });
+        socket.on("player leave", (playerID) => {
+            players = players.filter( x => x.id !== playerID);
 
-                state = "joining room; await validation";
-            }
-            $("#screen-joincode").hide();
+            console.info("Player Left: ", playerID);
+        });
+        socket.on("youre leader", () => {
+            console.info("You are the room Leader.");
+            isLeader = true;
+        });
+        socket.on("youre not leader", () => {
+            isLeader = false;
+        });
+    
+        function makeid() {
+            var text = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            for (var i = 0; i < 5; i++)
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+            return text;
         }
-        socket.on("join game room;success", (current_players) => {
-            lobby_players = current_players;
-            console.log("joined room " + room);
-        });
 
-        socket.on("message", () => {
+        if(!location.href.includes("#")) {
+            room = makeid();
+            history.replaceState({}, document.title, "/#" + room);
+        } else {
+            room = location.href.split("#")[1];
+            if(/[^a-zA-Z0-9]/.exec(room) !== null) {
+                console.warn("Page loaded with an invalid room id, regenerating!");
+                console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
+
+                room = makeid();
+                history.replaceState({}, document.title, "/#" + room);
+            }
+        }
+        $("#join-url").innerHTML = location.href;
+
+        socket.emit("join room", room);
+
+
+        setState('name-screen');
+
+        function setState(newstate) {
+            $class("show:"+state).forEach(x => x.hide());
+            state = newstate;
+            $class("show:"+state).forEach(x => x.show());
+        }
+
+        function handleNameEnter() {
+            var elem = $("#name-input");
+            name = elem.value;
             
-        })
+            $("#name-in-corner").innerHTML = name;
+            
+            setState("lobby");
+
+            socket.emit("name entry", name);
+        }
 
     </script>
 </body>
