@@ -73,13 +73,32 @@
             top: 10px;
             right: 20px;
         }
-        .state {display:none;}
+        .state {
+            display:none;
+        }
 
         #join-url {
             color: black;
             background: white;
-            padding: 1.25em 0;
+            padding: 1.25em 1em;
             box-shadow: 0 2px 4px #00000040;
+            width: min-content;
+            /* margin: 1.5em auto; */
+            user-select: all;
+
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #join-url-container:hover #join-url {
+            color: #17567a;
+            cursor: pointer;
+
+            transform: translateY(-3.5px);
+            box-shadow: 0 4px 6px #00000040;
+        }
+        #join-url-container {
+            /* padding: 1.25em 1em; */
+            width: min-content;
+            margin: 1.5em auto;
         }
         .bg {
             z-index: -1;
@@ -124,8 +143,36 @@
             opacity: 0.7;
         }
 
-        .red {
+        .player-info:not(.unjoined) > .red {
             background: rgb(255, 66, 66);
+        }
+        .player-info:not(.unjoined) > .green {
+            background: rgb(66, 255, 113);
+        }
+        .player-info:not(.unjoined) > .blue {
+            background: rgb(66, 69, 255);
+        }
+        .player-info:not(.unjoined) > .purple {
+            background: rgb(186, 66, 255);
+        }
+
+        @keyframes enablejs____thanks {
+            to {opacity: 1;}
+        }
+        .enable-your-javascript {
+            animation: enablejs____thanks 1s 0.2s;
+            animation-fill-mode: forwards;
+            opacity: 0;
+            display: block;
+        }
+
+        footer {
+            color: white;
+            text-align: center;
+            font-family: "Segoe UI",Tahoma,Geneva,Verdana,sans-serif;
+            height: 48px;
+            line-height: 48px;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -138,57 +185,83 @@
         </div>
     </div>
     
-    <header>game</header>
-
-    <section class="state show:name-screen">
-        <p>Enter your Name</p>
-        <form submit="handleNameEnter">
-            <p>
-                <input type="text" placeholder="Name" id="name-input">
-                <button type="submit">Continue</button>
-            </p>
-        </form>
-    </section>
-
-    <section class="state show:lobby">
-        <p class="almost-sides">Send this URL to a friend, and wait for them to join</p>
-        <p id="join-url">{the url}</p>
-        <div class="room-details">
-            <p>Waiting for Players</p>
-            <div class="players">
-                <div class="player-info unjoined player1i">
-                    <div class="player-icon"></div>
-                    <div class="player-label">(Open)</div>
+    <div style="display:flex;flex-direction:column;min-height:100%;">
+        <div style="flex-grow: 1;">
+            <header>game</header>
+            
+            <section class="state enable-your-javascript show:null">
+                <p>Please Enable JavaScript</p>
+            </section>
+            
+            <section class="state show:name-screen">
+                <p>Enter your Name</p>
+                <form submit="handleNameEnter">
+                    <p>
+                        <input type="text" placeholder="Name" id="name-input">
+                        <button type="submit">Continue</button>
+                    </p>
+                </form>
+            </section>
+            
+            <section class="state show:disconnected">
+                <p>Uh Oh!</p>
+                <p class="almost-sides">You got disconnected from your game. Dont close the tab, we will reconnect you
+                    automatically.</p>
+            </section>
+            
+            <section class="state show:lobby">
+                <p class="almost-sides">Send this URL to a friend, and wait for them to join</p>
+            
+                <div id="join-url-container">
+                    <p id="join-url"></p>
                 </div>
-                <div class="player-info unjoined player2i">
-                    <div class="player-icon"></div>
-                    <div class="player-label">(Open)</div>
+            
+                <div class="room-details">
+                    <p>Waiting for Players</p>
+                    <div class="players">
+                        <div class="player-info unjoined player1i">
+                            <div class="player-icon red"></div>
+                            <div class="player-label">(Open)</div>
+                        </div>
+                        <div class="player-info unjoined player2i">
+                            <div class="player-icon green"></div>
+                            <div class="player-label">(Open)</div>
+                        </div>
+                        <div class="player-info unjoined player3i">
+                            <div class="player-icon blue"></div>
+                            <div class="player-label">(Open)</div>
+                        </div>
+                        <div class="player-info unjoined player4i">
+                            <div class="player-icon purple"></div>
+                            <div class="player-label">(Open)</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="player-info unjoined player3i">
-                    <div class="player-icon"></div>
-                    <div class="player-label">(Open)</div>
-                </div>
-                <div class="player-info unjoined player4i">
-                    <div class="player-icon"></div>
-                    <div class="player-label">(Open)</div>
-                </div>
-            </div>
+                <p>
+                    <button>Start Game</button>
+                </p>
+            </section>
         </div>
-        <p>
-            <button>Start Game</button>
-        </p>
-    </section>
+        <a href="https://davecode.me/made-with-love" style="text-decoration:none">
+            <footer>Made with <svg height="20px" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true" width="18px" style="color: rgb(255, 0, 0); transform: translateY(5px);"><path fill="currentColor" d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z"></path></svg> by Humans</footer>
+        </a>
+    </div>
+
 
     <script>
         // basically jquery
         var $ = document.querySelector.bind(document);
         var $$ = (q) => Array.from(document.querySelectorAll(q));
         var $class = (q) => Array.from(document.getElementsByClassName(q));
+        var $tagName = (q) => Array.from(document.getElementsByTagName(q));
+        var $id = document.getElementById.bind(document);
         EventTarget.prototype.on = EventTarget.prototype.addEventListener
         EventTarget.prototype.off = EventTarget.prototype.removeEventListener
         EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent
         HTMLElement.prototype.hide = function(){this.style.display="none";}
         HTMLElement.prototype.show = function(){this.style.display="initial";}
+        HTMLElement.prototype.$ = HTMLElement.prototype.querySelector;
+        HTMLElement.prototype.$$ = function(q) { return Array.from(HTMLElement.prototype.querySelector.bind(this)(q)); };
         // end basically jquery
 
         // form safe
@@ -208,23 +281,76 @@
 
     <script>
         var state = "null";
-        var name = null;
+        var name = "name not set name not set";
         var socket = io();
         var room = null;
         var players = null;
         var isLeader = false;
+        var id = null;
+        var our_index = 0;
+        var DisconnectedPrevState = null;
+
+        function updateLobbyUI() {
+            if(!players) return;
+
+            for (let index = 0; index < 4; index++) {
+                let isInLobby = false;
+                let playerName = null;
+
+                // get info
+                if(index == our_index) {
+                    isInLobby = true;
+                    playerName = "You";
+                } else {
+                    const player = players[index > our_index ? index - 1: index];
+                    
+                    isInLobby = !!player;
+                    if(isInLobby) {
+                        playerName = player.name || "(Player)";
+                        playerColor = "green";
+                    }
+                }
+
+                // render
+                const elem = $(".player" + (index + 1) + "i");
+                if(isInLobby) {
+                    elem.classList.remove("unjoined");
+                    elem.$(".player-label").innerHTML = playerName;
+                    
+                } else {
+                    elem.classList.add("unjoined");
+                    elem.$(".player-label").innerHTML = "(Open)";
+                }
+            }
+        }
 
         socket.on("socket code", (code) => {
             id = code;
             console.info("Socket ID: ", id);
+            
+            socket.emit("join room", room);
+
+            if(name !== "name not set name not set") {
+                socket.emit("name entry", name);
+            }
+
+            if(DisconnectedPrevState) {
+
+                setState(DisconnectedPrevState);
+                DisconnectedPrevState = null;
+
+            }
         });
-        socket.on("player list", (list) => {
+        socket.on("join info", (index, list) => {
+            our_index = index;
             players = list;
             console.info("Player List: ", list);
+            updateLobbyUI();
         });
         socket.on("player join", (newPlayer) => {
             players.push(newPlayer);
             console.info("Player Joined: ", newPlayer);
+            updateLobbyUI();
         });
         socket.on("player name set", (playerId, playerName) => {
 
@@ -236,18 +362,27 @@
                 }
             });
             console.info("Player Name Set: ", playerId, "=", playerName);
+
+            updateLobbyUI();
         });
         socket.on("player leave", (playerID) => {
             players = players.filter( x => x.id !== playerID);
 
             console.info("Player Left: ", playerID);
+            updateLobbyUI();
         });
         socket.on("youre leader", () => {
             console.info("You are the room Leader.");
             isLeader = true;
+            updateLobbyUI();
         });
         socket.on("youre not leader", () => {
             isLeader = false;
+            updateLobbyUI();
+        });
+        socket.on("disconnect", () => {
+            DisconnectedPrevState = state;
+            setState("disconnected");
         });
     
         function makeid() {
@@ -274,9 +409,7 @@
             }
         }
         $("#join-url").innerHTML = location.href;
-
-        socket.emit("join room", room);
-
+        $("#join-url-container").appendChild($("#join-url"));
 
         setState('name-screen');
 
@@ -287,6 +420,8 @@
         }
 
         function handleNameEnter() {
+            console.log("handleNameEntry");
+            
             var elem = $("#name-input");
             name = elem.value;
             
@@ -296,7 +431,6 @@
 
             socket.emit("name entry", name);
         }
-
     </script>
 </body>
 </html>

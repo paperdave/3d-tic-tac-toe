@@ -79,7 +79,7 @@ function joinRoom(socket, room) {
     });
 
     // send player list
-    socket.emit("player list", rooms[room].players.map(SocketToPlayer));
+    socket.emit("join info", rooms[room].players.length, rooms[room].players.map(SocketToPlayer));
 
     // add
     rooms[room].players.push(socket);
@@ -103,9 +103,12 @@ function leaveRoom(socket, room) {
     // remove
     rooms[room].players = rooms[room].players.filter(x => x.id !== socket.id);
     
+    console.log("room " + room + " contains " + rooms[room].players.length + " players");
+
     // if empty destroy room
     if(rooms[room].players.length === 0) {
         delete rooms[room];
+        console.log("cleaning up room " + room);
     } else {
         // reassign leader
         if(socket.id === rooms[room].leader.id) {
@@ -114,7 +117,6 @@ function leaveRoom(socket, room) {
         }
 
     }
-
 }
 
 io.on("connection", (socket) => {
