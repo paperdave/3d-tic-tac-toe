@@ -82,10 +82,14 @@ function joinRoom(socket, room) {
             players: [],
             state: "lobby",
             id: room,
-            leader: socket
+            leader: socket,
+            isStarted: false,
         };
         socket.emit("youre leader");
+    } else {
+        socket.emit("youre not leader");
     }
+
     // if room is too big notify
     if (rooms[room].players.length >= 4) {
         socket.emit("room too big");
@@ -139,6 +143,32 @@ function leaveRoom(socket, room) {
 
     }
 }
+function startRoom(socket, room) {
+    // ignore if room is gone
+    if (!(room in rooms)) return console.log("[start] no room exist");
+    
+    // ignore if room started
+    if (rooms[room].isStarted) return console.log("[start] started");
+    
+    // ignore if not leader
+    console.log(socket.id);
+    console.log(rooms[room].leader.id);
+    if (rooms[room].leader.id !== socket.id) return console.log("[start] no leader");
+
+    // ignore if room is less than 2
+    if (rooms[room].players.length < 2) return console.log("[start] room size");
+
+    console.log("the game is about to start");
+
+    rooms[room].isStarted = true;
+    rooms[room].players.forEach(sock => {
+        sock.emit("game is about to start");
+    });
+
+    rooms[room].map = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
+    rooms[room].turn = 0;
+    rooms[room].isEnded = false;
+}
 
 io.on("connection", (socket) => {
     // make a game code for this game
@@ -176,6 +206,11 @@ io.on("connection", (socket) => {
 
         if(room) {
             notifyRoomOfName(socket, room, socket.name);
+        }
+    });
+    socket.on("start game", () => {
+        if(room) {
+            startRoom(socket, room);
         }
     });
     socket.on("disconnect", () => {

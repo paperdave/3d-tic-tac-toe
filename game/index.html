@@ -251,9 +251,13 @@
                 </div>
                 <div id="start-game-section">
                     <p>
-                        <button>Start Game</button>
+                        <button id="start-game-button">Start Game</button>
                     </p>
                 </div>
+            </section>
+
+            <section class="state show:game-is-about-to-start">
+                <p>the game is about to start</p>
             </section>
         </div>
         <a href="https://davecode.me/made-with-love" style="text-decoration:none">
@@ -285,7 +289,7 @@
                 try {
                     window[func]();
                 } catch (error) {
-                    console.log(error);
+                    console.error(error);
                 }
                 return false;
             };
@@ -293,14 +297,12 @@
         // end form safe
 
         // state magic
-        
         var state = "no-js";
         function setState(newstate) {
             $class("show:" + state).forEach(x => x.hide());
             state = newstate;
             $class("show:" + state).forEach(x => x.show());
         }
-        
         // end state magic
     </script>
 
@@ -362,7 +364,6 @@
         // when we join/reconnect, we get our own socket code.
         socket.on("socket code", (code) => {
             id = code;
-            console.info("Socket ID: ", id);
             
             socket.emit("join room", room);
 
@@ -382,13 +383,11 @@
         socket.on("join info", (index, list) => {
             our_index = index;
             players = list;
-            console.info("Player List: ", list);
             updateLobbyUI();
         });
         // when someone new joins, their name is always placed at the end of the list
         socket.on("player join", (newPlayer) => {
             players.push(newPlayer);
-            console.info("Player Joined: ", newPlayer);
             updateLobbyUI();
         });
         // when someone sets their name
@@ -401,7 +400,6 @@
                     return true;
                 }
             });
-            console.info("Player Name Set: ", playerId, "=", playerName);
 
             updateLobbyUI();
         });
@@ -410,12 +408,10 @@
             players = players.filter( x => x.id !== playerID);
             our_index = yourNewIndex;
 
-            console.info("Player Left: ", playerID);
             updateLobbyUI();
         });
         // when you recieve leader, also given at room join
         socket.on("youre leader", () => {
-            console.info("You are the room Leader.");
             isLeader = true;
             updateLobbyUI();
         });
@@ -436,7 +432,13 @@
         socket.on("room too big", () => {
             setState("too-big");
         })
-    
+        // game is about to start
+        socket.on("game is about to start", () => {
+            
+            setState("game-is-about-to-start");
+
+        });
+
         function makeid() {
             var text = "";
             var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -494,6 +496,14 @@
         $("#state-surface").on("click", function(ev) {
             if(state === "name-screen" && ev.target.id === "state-surface") {
                 $("#name-input").focus();
+            }
+        });
+
+        // starting the game
+        $("#start-game-button").on("click", () => {
+            if(state === "lobby" && isLeader) {
+                socket.emit("start game");
+                setState("game-is-about-to-start");
             }
         });
     </script>
