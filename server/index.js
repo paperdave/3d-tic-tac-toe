@@ -29,6 +29,16 @@ app.use(express.static(path.join(__dirname, "../game")));
 const sockets = {};
 const rooms = {};
 
+function makeid() {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    for (var i = 0; i < 5; i++)
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
 const ensureTypeData = {
     "not undefined": (x) => typeof x !== "undefined",
     "string": (x) => typeof x === "string",
@@ -44,7 +54,7 @@ function is(input, type) {
 
 function ensure(bool, reason, socket) {
     if(!bool) {
-        console.log("Kicked: " + (reason || "<no reson set>"));
+        console.log("Kicked: " + chalk.red(reason || "<no reson set>"));
         socket.disconnect();
     }
     return !bool;
@@ -58,6 +68,14 @@ function SocketToPlayer(socket) {
 }
 
 function joinRoom(socket, room) {
+    // hard coded "#full" room, you cannot join this, as it always
+    // "is full"
+    if(room === "full") {
+        socket.emit("room too big");
+        socket.disconnect();
+        return;
+    }
+
     //create a room if needed
     if(!(room in rooms)) {
         rooms[room] = {
@@ -69,10 +87,12 @@ function joinRoom(socket, room) {
         socket.emit("youre leader");
     }
     // if room is too big notify
-    if (rooms[room].players >= 4) {
+    if (rooms[room].players.length >= 4) {
         socket.emit("room too big");
+        socket.disconnect();
         return;
     }
+
     // notify
     rooms[room].players.forEach(sock => {
         sock.emit("player join", SocketToPlayer(socket));
@@ -93,18 +113,19 @@ function notifyRoomOfName(socket, room, name) {
     });
 }
 function leaveRoom(socket, room) {
-    // notify
-    rooms[room].players.forEach(sock => {
-        if (sock === socket) { return; };
-
-        sock.emit("player leave", socket.id);
-    });
+    // ignore if room is gone
+    if(!(room in rooms)) return;
 
     // remove
     rooms[room].players = rooms[room].players.filter(x => x.id !== socket.id);
     
-    console.log("room " + room + " contains " + rooms[room].players.length + " players");
+    // notify
+    rooms[room].players.forEach((sock, index) => {
+        if (sock === socket) { return; };
 
+        sock.emit("player leave", socket.id, index);
+    });
+    
     // if empty destroy room
     if(rooms[room].players.length === 0) {
         delete rooms[room];
@@ -139,7 +160,6 @@ io.on("connection", (socket) => {
             || T(/[^a-zA-Z0-9]/.exec(newroom) === null, "[join room] Invalid Chars")
         ) return socket.disconnect();
 
-        console.log("joining room " + newroom);
         room = newroom;
 
         joinRoom(socket, room);
@@ -152,7 +172,6 @@ io.on("connection", (socket) => {
             || T(/[^a-zA-Z0-9 ]/.exec(newname) === null, "[name entry] Invalid Characters")
         ) return;
 
-        console.log("setting name " + newname);
         socket.name = newname;
 
         if(room) {
@@ -166,11 +185,21 @@ io.on("connection", (socket) => {
     });
 });
 
+app.get("/empty-room", (req,res) => {
+    let id;
+
+    do {
+        id = makeid();
+    } while (id in rooms);
+
+    res.send(id);
+});
+
 // HTTP
 if (process.env.HTTP_PORT) {
     const server = require('http').Server(app);
     server.listen(parseInt(process.env.HTTP_PORT), function () {
-        console.log('HTTP Listening on *:' + process.env.HTTP_PORT);
+        console.log('HTTP Enabled.  ' + chalk.blue(`http://localhost:${process.env.HTTP_PORT}/`));
     });
     io.attach(server);
 }
@@ -182,7 +211,7 @@ if (process.env.HTTPS_PORT) {
         cert: fs.readFileSync(process.env.HTTPS_CERT),
     }, app);
     server.listen(parseInt(process.env.HTTPS_PORT), function () {
-        console.log('HTTPS Listening on *:' + process.env.HTTPS_PORT);
+        console.log('HTTPS Enabled. ' + chalk.blue(`https://localhost:${process.env.HTTPS_PORT}/`));
     });
     io.attach(server);
 }

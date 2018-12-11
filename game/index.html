@@ -174,6 +174,10 @@
             line-height: 48px;
             font-size: 16px;
         }
+        
+        .a-slightly-smaller-font {
+            font-size: 1.1em;
+        }
     </style>
 </head>
 <body>
@@ -186,10 +190,10 @@
     </div>
     
     <div style="display:flex;flex-direction:column;min-height:100%;">
-        <div style="flex-grow: 1;">
+        <div style="flex-grow: 1;" id="state-surface">
             <header>game</header>
             
-            <section class="state enable-your-javascript show:null">
+            <section class="state enable-your-javascript show:no-js">
                 <p>Please Enable JavaScript</p>
             </section>
             
@@ -197,10 +201,18 @@
                 <p>Enter your Name</p>
                 <form submit="handleNameEnter">
                     <p>
-                        <input type="text" placeholder="Name" id="name-input">
+                        <input type="text" placeholder="Name" autocomplete="false" id="name-input">
                         <button type="submit">Continue</button>
                     </p>
                 </form>
+            </section>
+            
+            <section class="state show:too-big">
+                <p>Uh Oh!</p>
+                <p class="almost-sides a-slightly-smaller-font">That room is already full (4 Players Per Room). You can generate a new room url by clicking the button below.</p>
+                <p>
+                    <button id="new-room">Join Empty Room</button>
+                </p>
             </section>
             
             <section class="state show:disconnected">
@@ -237,9 +249,11 @@
                         </div>
                     </div>
                 </div>
-                <p>
-                    <button>Start Game</button>
-                </p>
+                <div id="start-game-section">
+                    <p>
+                        <button>Start Game</button>
+                    </p>
+                </div>
             </section>
         </div>
         <a href="https://davecode.me/made-with-love" style="text-decoration:none">
@@ -255,9 +269,9 @@
         var $class = (q) => Array.from(document.getElementsByClassName(q));
         var $tagName = (q) => Array.from(document.getElementsByTagName(q));
         var $id = document.getElementById.bind(document);
-        EventTarget.prototype.on = EventTarget.prototype.addEventListener
-        EventTarget.prototype.off = EventTarget.prototype.removeEventListener
-        EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent
+        EventTarget.prototype.on = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.off = EventTarget.prototype.removeEventListener;
+        EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent;
         HTMLElement.prototype.hide = function(){this.style.display="none";}
         HTMLElement.prototype.show = function(){this.style.display="initial";}
         HTMLElement.prototype.$ = HTMLElement.prototype.querySelector;
@@ -277,10 +291,20 @@
             };
         })
         // end form safe
+
+        // state magic
+        
+        var state = "no-js";
+        function setState(newstate) {
+            $class("show:" + state).forEach(x => x.hide());
+            state = newstate;
+            $class("show:" + state).forEach(x => x.show());
+        }
+        
+        // end state magic
     </script>
 
     <script>
-        var state = "null";
         var name = "name not set name not set";
         var socket = io();
         var room = null;
@@ -290,18 +314,30 @@
         var our_index = 0;
         var DisconnectedPrevState = null;
 
+        // handles updating all components in the lobby state.
         function updateLobbyUI() {
+            // ignore if not initialized.
             if(!players) return;
 
+            // leader controls
+            if(isLeader) {
+                $("#start-game-section").show();
+            } else {
+                $("#start-game-section").hide();
+            }
+
+            // player information
             for (let index = 0; index < 4; index++) {
                 let isInLobby = false;
                 let playerName = null;
 
                 // get info
                 if(index == our_index) {
+                    // us
                     isInLobby = true;
                     playerName = "You";
                 } else {
+                    // them
                     const player = players[index > our_index ? index - 1: index];
                     
                     isInLobby = !!player;
@@ -316,7 +352,6 @@
                 if(isInLobby) {
                     elem.classList.remove("unjoined");
                     elem.$(".player-label").innerHTML = playerName;
-                    
                 } else {
                     elem.classList.add("unjoined");
                     elem.$(".player-label").innerHTML = "(Open)";
@@ -324,6 +359,7 @@
             }
         }
 
+        // when we join/reconnect, we get our own socket code.
         socket.on("socket code", (code) => {
             id = code;
             console.info("Socket ID: ", id);
@@ -334,6 +370,7 @@
                 socket.emit("name entry", name);
             }
 
+            // if disconnected, go back to its state.
             if(DisconnectedPrevState) {
 
                 setState(DisconnectedPrevState);
@@ -341,17 +378,20 @@
 
             }
         });
+        // current room information, and our index.
         socket.on("join info", (index, list) => {
             our_index = index;
             players = list;
             console.info("Player List: ", list);
             updateLobbyUI();
         });
+        // when someone new joins, their name is always placed at the end of the list
         socket.on("player join", (newPlayer) => {
             players.push(newPlayer);
             console.info("Player Joined: ", newPlayer);
             updateLobbyUI();
         });
+        // when someone sets their name
         socket.on("player name set", (playerId, playerName) => {
 
             players.some((x) => {
@@ -365,25 +405,37 @@
 
             updateLobbyUI();
         });
-        socket.on("player leave", (playerID) => {
+        // when someone leaves, also gives updated index
+        socket.on("player leave", (playerID, yourNewIndex) => {
             players = players.filter( x => x.id !== playerID);
+            our_index = yourNewIndex;
 
             console.info("Player Left: ", playerID);
             updateLobbyUI();
         });
+        // when you recieve leader, also given at room join
         socket.on("youre leader", () => {
             console.info("You are the room Leader.");
             isLeader = true;
             updateLobbyUI();
         });
+        // when you are no longer leader; this is probably unused, but maybe
         socket.on("youre not leader", () => {
             isLeader = false;
             updateLobbyUI();
         });
+        // disconnnected
         socket.on("disconnect", () => {
+            // to big will disconnect us, so ignore
+            if(state=="too-big") return;
+            
             DisconnectedPrevState = state;
             setState("disconnected");
         });
+        // this also disconnects us
+        socket.on("room too big", () => {
+            setState("too-big");
+        })
     
         function makeid() {
             var text = "";
@@ -395,6 +447,7 @@
             return text;
         }
 
+        // handle the url stuff
         if(!location.href.includes("#")) {
             room = makeid();
             history.replaceState({}, document.title, "/#" + room);
@@ -411,17 +464,11 @@
         $("#join-url").innerHTML = location.href;
         $("#join-url-container").appendChild($("#join-url"));
 
+        // initial state
         setState('name-screen');
 
-        function setState(newstate) {
-            $class("show:"+state).forEach(x => x.hide());
-            state = newstate;
-            $class("show:"+state).forEach(x => x.show());
-        }
-
+        // logic for name entry
         function handleNameEnter() {
-            console.log("handleNameEntry");
-            
             var elem = $("#name-input");
             name = elem.value;
             
@@ -431,6 +478,24 @@
 
             socket.emit("name entry", name);
         }
+
+        // logic for the "room is full" state
+        $("#new-room").on("click", () => {
+            // reload!
+            fetch("/empty-room").then(x => x.text()).then(room => {
+                location.href = "/#" + room;
+                location.reload();
+            });
+        });
+
+        // focus the name input
+        $("#name-input").focus();
+        // also focus the name input
+        $("#state-surface").on("click", function(ev) {
+            if(state === "name-screen" && ev.target.id === "state-surface") {
+                $("#name-input").focus();
+            }
+        });
     </script>
 </body>
 </html>
