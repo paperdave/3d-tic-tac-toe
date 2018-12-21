@@ -1,0 +1,21 @@
+updated 2018-12-17
+
+[ ] clicky -> send a [[move]] message to server
+[ ] server send that message to others (checking its validity)
+[ ] game recieve other moves and handle turn correctly
+
+[ ] whos turn bottom hud
+[ ] text @ top saying "It's <name>'s turn"
+
+[ ] win checking
+[ ] on the server
+[ ] on the game itself
+[ ] have server kick the players from the socket when they win-ed the game
+[ ] have the game go to a win screen with a `New Room` button.
+
+[ ] if you join a room while it is being used in a game show message + `New Room` button.
+
+[ ] polish + fx
+	[ ] shakey rotate on cubes when they are painted
+	[ ] particles in the background maybe
+	[ ] fade/animate between states

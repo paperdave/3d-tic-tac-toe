@@ -143,24 +143,24 @@
             opacity: 0.7;
         }
 
-        .player-info:not(.unjoined) > .red {
+        .player-info:not(.unjoined) > .red, .bh-player.red {
             background: rgb(255, 66, 66);
         }
-        .player-info:not(.unjoined) > .green {
+        .player-info:not(.unjoined) > .green, .bh-player.green {
             background: rgb(66, 255, 113);
         }
-        .player-info:not(.unjoined) > .blue {
+        .player-info:not(.unjoined) > .blue, .bh-player.blue {
             background: rgb(66, 69, 255);
         }
-        .player-info:not(.unjoined) > .purple {
+        .player-info:not(.unjoined) > .purple, .bh-player.purple {
             background: rgb(186, 66, 255);
         }
 
-        @keyframes enablejs____thanks {
+        @keyframes a {
             to {opacity: 1;}
         }
         .enable-your-javascript {
-            animation: enablejs____thanks 1s 0.2s;
+            animation: a 1s 0.5s;
             animation-fill-mode: forwards;
             opacity: 0;
             display: block;
@@ -178,6 +178,28 @@
         .a-slightly-smaller-font {
             font-size: 1.1em;
         }
+        canvas#game-surface {
+            transition: opacity 500ms linear;
+            position: fixed;
+            top: 0;
+        }
+        .invisible {
+            opacity: 0;
+        }
+        #bottom-hud {
+            height: 6em;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            display: flex;
+        }
+        .bh-player {
+            flex-grow: 1;
+            background:red;
+            height: 100%;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -187,6 +209,20 @@
         <div style="max-width:500px;margin:auto;position:relative;">
             <div id="name-in-corner"></div>
         </div>
+        <div id="bottom-hud" class="show:game">
+            <div class="bh-player red">
+                1
+            </div>
+            <div class="bh-player green">
+                2
+            </div>
+            <div class="bh-player blue">
+                3
+            </div>
+            <div class="bh-player purple">
+                4
+            </div>
+        </div>
     </div>
     
     <div style="display:flex;flex-direction:column;min-height:100%;">
@@ -195,6 +231,10 @@
             
             <section class="state enable-your-javascript show:no-js">
                 <p>Please Enable JavaScript</p>
+            </section>
+
+            <section class="state show:loading">
+                <p>loading</p>
             </section>
             
             <section class="state show:name-screen">
@@ -256,256 +296,21 @@
                 </div>
             </section>
 
-            <section class="state show:game-is-about-to-start">
-                <p>the game is about to start</p>
+            <section id="canvas-container" class="state show:game">
             </section>
         </div>
-        <a href="https://davecode.me/made-with-love" style="text-decoration:none">
+        <a class="hide:game" href="https://davecode.me/made-with-love" style="text-decoration:none">
             <footer>Made with <svg height="20px" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true" width="18px" style="color: rgb(255, 0, 0); transform: translateY(5px);"><path fill="currentColor" d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z"></path></svg> by Humans</footer>
         </a>
     </div>
-
-
     <script>
-        // basically jquery
-        var $ = document.querySelector.bind(document);
-        var $$ = (q) => Array.from(document.querySelectorAll(q));
-        var $class = (q) => Array.from(document.getElementsByClassName(q));
-        var $tagName = (q) => Array.from(document.getElementsByTagName(q));
-        var $id = document.getElementById.bind(document);
-        EventTarget.prototype.on = EventTarget.prototype.addEventListener;
-        EventTarget.prototype.off = EventTarget.prototype.removeEventListener;
-        EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent;
-        HTMLElement.prototype.hide = function(){this.style.display="none";}
-        HTMLElement.prototype.show = function(){this.style.display="initial";}
-        HTMLElement.prototype.$ = HTMLElement.prototype.querySelector;
-        HTMLElement.prototype.$$ = function(q) { return Array.from(HTMLElement.prototype.querySelector.bind(this)(q)); };
-        // end basically jquery
-
-        // form safe
-        $$("form[submit]").forEach(item => {
-            var func = item.getAttribute("submit");
-            item.onsubmit = function() {
-                try {
-                    window[func]();
-                } catch (error) {
-                    console.error(error);
-                }
-                return false;
-            };
-        })
-        // end form safe
-
-        // state magic
-        var state = "no-js";
-        function setState(newstate) {
-            $class("show:" + state).forEach(x => x.hide());
-            state = newstate;
-            $class("show:" + state).forEach(x => x.show());
-        }
-        // end state magic
+        Array.from(document.getElementsByClassName("show:no-js")).forEach(x => x.style.display="none");        
+        Array.from(document.getElementsByClassName("show:loading")).forEach(x => x.style.display="initial");        
     </script>
 
-    <script>
-        var name = "name not set name not set";
-        var socket = io();
-        var room = null;
-        var players = null;
-        var isLeader = false;
-        var id = null;
-        var our_index = 0;
-        var DisconnectedPrevState = null;
-
-        // handles updating all components in the lobby state.
-        function updateLobbyUI() {
-            // ignore if not initialized.
-            if(!players) return;
-
-            // leader controls
-            if(isLeader) {
-                $("#start-game-section").show();
-            } else {
-                $("#start-game-section").hide();
-            }
-
-            // player information
-            for (let index = 0; index < 4; index++) {
-                let isInLobby = false;
-                let playerName = null;
-
-                // get info
-                if(index == our_index) {
-                    // us
-                    isInLobby = true;
-                    playerName = "You";
-                } else {
-                    // them
-                    const player = players[index > our_index ? index - 1: index];
-                    
-                    isInLobby = !!player;
-                    if(isInLobby) {
-                        playerName = player.name || "(Player)";
-                        playerColor = "green";
-                    }
-                }
-
-                // render
-                const elem = $(".player" + (index + 1) + "i");
-                if(isInLobby) {
-                    elem.classList.remove("unjoined");
-                    elem.$(".player-label").innerHTML = playerName;
-                } else {
-                    elem.classList.add("unjoined");
-                    elem.$(".player-label").innerHTML = "(Open)";
-                }
-            }
-        }
-
-        // when we join/reconnect, we get our own socket code.
-        socket.on("socket code", (code) => {
-            id = code;
-            
-            socket.emit("join room", room);
-
-            if(name !== "name not set name not set") {
-                socket.emit("name entry", name);
-            }
-
-            // if disconnected, go back to its state.
-            if(DisconnectedPrevState) {
-
-                setState(DisconnectedPrevState);
-                DisconnectedPrevState = null;
-
-            }
-        });
-        // current room information, and our index.
-        socket.on("join info", (index, list) => {
-            our_index = index;
-            players = list;
-            updateLobbyUI();
-        });
-        // when someone new joins, their name is always placed at the end of the list
-        socket.on("player join", (newPlayer) => {
-            players.push(newPlayer);
-            updateLobbyUI();
-        });
-        // when someone sets their name
-        socket.on("player name set", (playerId, playerName) => {
-
-            players.some((x) => {
-                if(x.id === playerId) {
-                    x.name = playerName;
-
-                    return true;
-                }
-            });
-
-            updateLobbyUI();
-        });
-        // when someone leaves, also gives updated index
-        socket.on("player leave", (playerID, yourNewIndex) => {
-            players = players.filter( x => x.id !== playerID);
-            our_index = yourNewIndex;
-
-            updateLobbyUI();
-        });
-        // when you recieve leader, also given at room join
-        socket.on("youre leader", () => {
-            isLeader = true;
-            updateLobbyUI();
-        });
-        // when you are no longer leader; this is probably unused, but maybe
-        socket.on("youre not leader", () => {
-            isLeader = false;
-            updateLobbyUI();
-        });
-        // disconnnected
-        socket.on("disconnect", () => {
-            // to big will disconnect us, so ignore
-            if(state=="too-big") return;
-            
-            DisconnectedPrevState = state;
-            setState("disconnected");
-        });
-        // this also disconnects us
-        socket.on("room too big", () => {
-            setState("too-big");
-        })
-        // game is about to start
-        socket.on("game is about to start", () => {
-            
-            setState("game-is-about-to-start");
-
-        });
-
-        function makeid() {
-            var text = "";
-            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-            for (var i = 0; i < 5; i++)
-                text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-            return text;
-        }
-
-        // handle the url stuff
-        if(!location.href.includes("#")) {
-            room = makeid();
-            history.replaceState({}, document.title, "/#" + room);
-        } else {
-            room = location.href.split("#")[1];
-            if(/[^a-zA-Z0-9]/.exec(room) !== null) {
-                console.warn("Page loaded with an invalid room id, regenerating!");
-                console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
-
-                room = makeid();
-                history.replaceState({}, document.title, "/#" + room);
-            }
-        }
-        $("#join-url").innerHTML = location.href;
-        $("#join-url-container").appendChild($("#join-url"));
-
-        // initial state
-        setState('name-screen');
-
-        // logic for name entry
-        function handleNameEnter() {
-            var elem = $("#name-input");
-            name = elem.value;
-            
-            $("#name-in-corner").innerHTML = name;
-            
-            setState("lobby");
-
-            socket.emit("name entry", name);
-        }
-
-        // logic for the "room is full" state
-        $("#new-room").on("click", () => {
-            // reload!
-            fetch("/empty-room").then(x => x.text()).then(room => {
-                location.href = "/#" + room;
-                location.reload();
-            });
-        });
-
-        // focus the name input
-        $("#name-input").focus();
-        // also focus the name input
-        $("#state-surface").on("click", function(ev) {
-            if(state === "name-screen" && ev.target.id === "state-surface") {
-                $("#name-input").focus();
-            }
-        });
-
-        // starting the game
-        $("#start-game-button").on("click", () => {
-            if(state === "lobby" && isLeader) {
-                socket.emit("start game");
-                setState("game-is-about-to-start");
-            }
-        });
-    </script>
+    <script src="./lib/three.js"></script>
+    <script src="./lib/OrbitControlsSmooth.js"></script>
+    <script src="./lib.js"></script>
+    <script src="./game.js"></script>
 </body>
 </html>
