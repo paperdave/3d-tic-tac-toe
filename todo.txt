@@ -1,10 +1,11 @@
 updated 2018-12-17
 
-[ ] clicky -> send a [[move]] message to server
-[ ] server send that message to others (checking its validity)
-[ ] game recieve other moves and handle turn correctly
+[X] clicky -> send a [[move]] message to server
+[X] server send that message
+[ ] (checking its validity)
+[X] game recieve other moves and handle turn correctly
 
-[ ] whos turn bottom hud
+[X] whos turn bottom hud
 [ ] text @ top saying "It's <name>'s turn"
 
 [ ] win checking
@@ -19,3 +20,4 @@ updated 2018-12-17
 	[ ] shakey rotate on cubes when they are painted
 	[ ] particles in the background maybe
 	[ ] fade/animate between states
+	

@@ -14,6 +14,8 @@ var camera;
 var mouse;
 var selectedObject;
 var renderer;
+var turn = 0;
+var allow3DClicks = false;
 
 //#region Socket Handlers 
 socket.on("socket code", (code) => {
@@ -89,6 +91,17 @@ socket.on("room too big", () => {
 // game is about to start
 socket.on("game is about to start", () => {
     start3d();
+});
+socket.on("paint", (pos, who) => {
+    var x = pos[0];
+    var y = pos[1];
+    var z = pos[2];
+
+    turn = (who + 1) % (players.length + 1);
+
+    setCubeColor(x, z, y, who);
+    
+    updateGameHudUI();
 });
 //#endregion
 
@@ -208,17 +221,92 @@ $("#start-game-button").on("click", () => {
 
 //#endregion
 
-//#region 3d scene everything
+//#region Game State
+
+function updateGameHudUI() {
+    for (let index = 0; index < 4; index++) {
+        let isInLobby = false;
+        let playerName = null;
+
+        // get info
+        if (index == our_index) {
+            // us
+            isInLobby = true;
+            playerName = "You";
+        } else {
+            // them
+            const player = players[index > our_index ? index - 1 : index];
+
+            isInLobby = !!player;
+            if (isInLobby) {
+                playerName = player.name || "(Player)";
+                playerColor = "green";
+            }
+        }
+
+        // render
+        const elem = $(".bh" + (index + 1) + "i");
+        if (isInLobby) {
+            
+            elem.classList.remove("disabled");
+            elem.$(".bh-name").innerHTML = playerName;
+            elem.classList[turn === index ? "add" : "remove"]("active");
+
+        } else {
+            elem.classList.add("disabled");
+        }
+    }
+}
 
 function handleMouseInput(x, y, z) {
-    console.log("clicky on: ", {x, y, z});
+    var x = x+1, z = z + 1, y = y + 1;
+
+    setCubeColor(x, z, y, our_index);
+    turn = (turn + 1) % (players.length + 1);
+    
+    socket.emit("paint", [x, y, z]);
+
+    updateGameHudUI();
+}
+
+// when you really don't know what to name Stuff
+function doTheWinDetect() {
+    // for each layer check a win
+    for (let x = 0; x < 3; x++) {
+        const slice = map[x];
+
+        // horizontal
+        for (let y = 0; y < 3; y++) {
+            const col = slice[y];
+            if (col[0] === col[1] && col[1] === col[2] && col[0] !== -1) {
+                return col[0];
+            }
+        }
+        // vertical
+        for (let z = 0; z < 3; z++) {
+            if (slice[0][z] === slice[1][z] && slice[1][z] === slice[2][z] && slice[0][z] !== -1) {
+                return slice[0][z];
+            }
+        }
+        // diags
+        if (slice[0][0] === slice[1][1] && slice[1][1] === slice[2][2] && slice[1][1] !== -1) {
+            return slice[1][1];
+        }
+        if (slice[2][0] === slice[1][1] && slice[1][1] === slice[0][2] && slice[1][1] !== -1) {
+            return slice[1][1];
+        }
+    }
+
+    return null;
 }
 
 function setCubeColor(x, y, z, id) {
     cubes[x][y][z].paint(id);
+    map[x][y][z] = id;
+
 }
 
-function meshFromYLEVEL(y) {
+function MESH() {
     let sc = 1;
     return new THREE.BoxGeometry(sc, sc, sc);
 }
@@ -230,14 +318,14 @@ function GameCube(x, z, y) {
     var color = { r: 1, g: 1, b: 1 };
 
     //Create main object
-    var mesh_geo = meshFromYLEVEL(y);
+    var mesh_geo = MESH(y);
     var mesh_mat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
     var mesh = new THREE.Mesh(mesh_geo, mesh_mat);
     mesh.scale.multiplyScalar(0.75);
     group.add(mesh);
 
     //Create outline object
-    var outline_geo = meshFromYLEVEL(y);
+    var outline_geo = MESH(y);
     var outline_mat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
     var outline = new THREE.Mesh(outline_geo, outline_mat);
     outline.scale.multiplyScalar(1.125 * 0.75);
@@ -262,7 +350,7 @@ function GameCube(x, z, y) {
 
     self.model = group;
     self.update = function() {
-        scale = lerp(scale, hover ? 1.15 : 1, 0.7);
+        scale = lerp(scale, hover ? 1.15 : 1, painted ? 0.1 : 0.7);
         
         group.scale.setScalar(scale );
     }
@@ -282,6 +370,8 @@ function GameCube(x, z, y) {
 
         painted = true;
         self.paintedColor = id;
+
+        scale = 1.25;
     }
     self.hoverOn = function () {
         if (painted) {
@@ -320,7 +410,9 @@ function start3d() {
     if (started3D) return;
     started3D = true;
 
-    console.info("Starting 3D Thing");
+    console.info("Starting 3D...");
+
+    updateGameHudUI();
 
     scene = new THREE.Scene();
     raycaster = new THREE.Raycaster()
@@ -347,10 +439,12 @@ function start3d() {
         checkIntersection();
     }
     function onClick(event) {
+        if (!allow3DClicks) return;
 
         onTouchMove(event);
 
-        if (selectedObject) {
+        if (selectedObject && our_index === turn && selectedObject.cubeEntity.paintedColor === -1) {
+            console.log(selectedObject.cubeEntity);
             selectedObject.cubeEntity.onClick();
         };
     }
@@ -364,7 +458,13 @@ function start3d() {
     }
     
     function checkIntersection() {
-    
+        
+        if(our_index !== turn) {
+            if (selectedObject) selectedObject.cubeEntity.hoverOff();
+            selectedObject = null;
+            return;
+        }
+
         raycaster.setFromCamera(mouse, camera);
         var intersects = raycaster.intersectObjects([scene], true);
         if (intersects.length > 0) {
@@ -392,7 +492,6 @@ function start3d() {
         const cube = GameCube((x - 1) * 2, (y - 1) * 2, (z - 1)*2);
         cubes[x][y][z] = cube;
         scene.add(cube.model);
-
     }
     
     for (const x of [...Array(3)].map((x, i) => i)) {
@@ -429,6 +528,9 @@ function start3d() {
     setTimeout(() => {
         surf.classList.remove("invisible");
     }, 100);
+    setTimeout(() => {
+        allow3DClicks = true;
+    }, 500);
 }
 
 //#endregion

@@ -4,7 +4,7 @@
   "description": "",
   "main": "server/index.js",
   "scripts": {},
-  "author": "Dave",
+  "author": "Dave Caruso",
   "license": "MIT",
   "dependencies": {
     "chalk": "^2.4.1",

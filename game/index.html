@@ -5,9 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-    <title>oh tree, oh (s)</title>
+    <title>3D Tic Tac Toe</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
+
+        :root {
+            --red: rgb(255, 66, 66);
+            --green: rgb(66, 255, 113);
+            --blue: rgb(66, 69, 255);
+            --purple: rgb(186, 66, 255);
+        }
+
         * {box-sizing: border-box;}
         body {
             margin: 0;
@@ -81,7 +89,7 @@
             color: black;
             background: white;
             padding: 1.25em 1em;
-            box-shadow: 0 2px 4px #00000040;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
             width: min-content;
             /* margin: 1.5em auto; */
             user-select: all;
@@ -93,7 +101,7 @@
             cursor: pointer;
 
             transform: translateY(-3.5px);
-            box-shadow: 0 4px 6px #00000040;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
         }
         #join-url-container {
             /* padding: 1.25em 1em; */
@@ -115,7 +123,7 @@
             height: 50px;
             background: white;
             border-radius: 3px;
-            box-shadow: 0 2px 4px #00000040;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
             opacity: 0.9;
             margin: auto;
             border: 2px solid black;
@@ -143,17 +151,17 @@
             opacity: 0.7;
         }
 
-        .player-info:not(.unjoined) > .red, .bh-player.red {
-            background: rgb(255, 66, 66);
+        .player-info:not(.unjoined) > .red {
+            background: var(--red);
         }
-        .player-info:not(.unjoined) > .green, .bh-player.green {
-            background: rgb(66, 255, 113);
+        .player-info:not(.unjoined) > .green {
+            background: var(--green)
         }
-        .player-info:not(.unjoined) > .blue, .bh-player.blue {
-            background: rgb(66, 69, 255);
+        .player-info:not(.unjoined) > .blue {
+            background: var(--blue);
         }
-        .player-info:not(.unjoined) > .purple, .bh-player.purple {
-            background: rgb(186, 66, 255);
+        .player-info:not(.unjoined) > .purple {
+            background: var(--purple);
         }
 
         @keyframes a {
@@ -186,19 +194,43 @@
         .invisible {
             opacity: 0;
         }
-        #bottom-hud {
+        .bottom-hud {
             height: 6em;
             width: 100%;
             position: fixed;
             bottom: 0;
             left: 0;
-            display: flex;
         }
         .bh-player {
             flex-grow: 1;
-            background:red;
+            background:hsla(0, 0%, 0%, 0.4);
             height: 100%;
-            display: inline-block;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-top: 3px solid;
+            transition: border-top-width 0.5s, background-color 0.5s;
+            will-change: border-top-width, background-color;
+        }
+        .bh-player.active {
+            border-top-width: 10px;
+            background:hsla(0, 0%, 0%, 0.5);
+
+        }
+        .bh-player.red {
+            border-top-color: var(--red);
+        }
+        .bh-player.green {
+            border-top-color: var(--green);
+        }
+        .bh-player.blue {
+            border-top-color: var(--blue);
+        }
+        .bh-player.purple {
+            border-top-color: var(--purple);
+        }
+        .bh-player.disabled {
+            display: none;
         }
     </style>
 </head>
@@ -209,18 +241,20 @@
         <div style="max-width:500px;margin:auto;position:relative;">
             <div id="name-in-corner"></div>
         </div>
-        <div id="bottom-hud" class="show:game">
-            <div class="bh-player red">
-                1
-            </div>
-            <div class="bh-player green">
-                2
-            </div>
-            <div class="bh-player blue">
-                3
-            </div>
-            <div class="bh-player purple">
-                4
+        <div class="bottom-hud state show:game">
+            <div style="display:flex;box-shadow:0 -4px 10px rgba(0,0,0,0.2)" class="bottom-hud">
+                <div class="bh-player red bh1i">
+                    <div class="bh-name"></div>
+                </div>
+                <div class="bh-player green bh2i">
+                    <div class="bh-name"></div>
+                </div>
+                <div class="bh-player blue bh3i">
+                    <div class="bh-name"></div>
+                </div>
+                <div class="bh-player purple bh4i">
+                    <div class="bh-name"></div>
+                </div>
             </div>
         </div>
     </div>

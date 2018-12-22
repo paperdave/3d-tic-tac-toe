@@ -169,6 +169,32 @@ function startRoom(socket, room) {
     rooms[room].turn = 0;
     rooms[room].isEnded = false;
 }
+function paintCube(socket, room, position) {
+    // ignore if room is gone
+    if (!(room in rooms)) return console.log("[paintCube] no room exist");
+
+    // ignore if room not started
+    if (!rooms[room].isStarted) return console.log("[paintCube] not started");
+
+    // ignore if not turn
+
+    // ignore if taken
+
+    // go!
+    var index = 0;
+
+    rooms[room].players.forEach((sock,i) => {
+        if (sock === socket) {
+            index = i;
+            return;
+        };
+    });
+
+    rooms[room].players.forEach(sock => {
+        if (sock === socket) { return; };
+        sock.emit("paint", position, index);
+    });
+}
 
 io.on("connection", (socket) => {
     // make a game code for this game
@@ -217,6 +243,23 @@ io.on("connection", (socket) => {
         if(room) leaveRoom(socket, room);
 
         delete sockets[socket.id];
+    });
+    socket.on("paint", (pos) => {
+        if (0
+            || T(room !== null, "[paint] not in room")
+            || T(is(pos, "array"), "[paint] position not array")
+            || T(is(pos[0], "number"), "[paint] position not number")
+            || T(is(pos[1], "number"), "[paint] position not number")
+            || T(is(pos[2], "number"), "[paint] position not number")
+            || T(pos[0] >= 0, "[paint] position not number")
+            || T(pos[0] <= 2 , "[paint] position not number")
+            || T(pos[1] >= 0, "[paint] position not number")
+            || T(pos[1] <= 2 , "[paint] position not number")
+            || T(pos[2] >= 0, "[paint] position not number")
+            || T(pos[2] <= 2 , "[paint] position not number")
+        ) return;
+        
+        paintCube(socket, room, pos);
     });
 });
 
