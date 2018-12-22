@@ -7,10 +7,10 @@ const uuidv4 = require('uuid/v4');
 // Write a default .ENV if one does not exist
 if (!fs.existsSync(".env")) {
     let dotenvdata = "# Application Configuration File\n"
-                    + "HTTP_PORT=80"
-                    + "HTTPS_PORT=443"
-                    + "HTTPS_KEY=keys/private.key"
-                    + "HTTPS_CERT=keys/certificate.crt"
+                    + "HTTP_PORT=80\n"
+                    + "HTTPS_PORT=false\n"
+                    + "HTTPS_KEY=keys/private.key\n"
+                    + "HTTPS_CERT=keys/certificate.crt\n"
 
     fs.writeFileSync(".env", dotenvdata);
     console.log(chalk.yellow("A default .env file was created, use this to configure the application."))
@@ -273,8 +273,19 @@ app.get("/empty-room", (req,res) => {
     res.send(id);
 });
 
+if (isNaN(parseInt(process.env.HTTP_PORT)) && isNaN(parseInt(process.env.HTTPS_PORT))) {
+    console.log(chalk.red("No HTTP or HTTPS server configured! How else are you gonna play the game!?"));
+    console.log(chalk.red("Please configure the .env file to start at least one server on a port."));
+    return;
+}
+if (parseInt(process.env.HTTP_PORT) === parseInt(process.env.HTTPS_PORT)) {
+    console.log(chalk.red("HTTP and HTTPS on the same port!? We can't do that!"));
+    console.log(chalk.red("Please configure the .env file to start the two servers on different ports, or disable one."));
+    return;
+}
+
 // HTTP
-if (process.env.HTTP_PORT) {
+if (!isNaN(parseInt(process.env.HTTP_PORT))) {
     const server = require('http').Server(app);
     server.listen(parseInt(process.env.HTTP_PORT), function () {
         console.log('HTTP Enabled.  ' + chalk.blue(`http://localhost:${process.env.HTTP_PORT}/`));
@@ -283,7 +294,7 @@ if (process.env.HTTP_PORT) {
 }
 
 // HTTPS
-if (process.env.HTTPS_PORT) {
+if (!isNaN(parseInt(process.env.HTTPS_PORT))) {
     var server = require('https').createServer({
         key: fs.readFileSync(process.env.HTTPS_KEY),
         cert: fs.readFileSync(process.env.HTTPS_CERT),
