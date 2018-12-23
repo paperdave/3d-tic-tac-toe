@@ -83,6 +83,7 @@ socket.on("youre not leader", () => {
 socket.on("disconnect", () => {
     // to big will disconnect us, so ignore
     if (state == "too-big") return;
+    if (state == "game-started-without-us") return;
 
     DisconnectedPrevState = state;
     setState("disconnected");
@@ -90,6 +91,10 @@ socket.on("disconnect", () => {
 // this also disconnects us
 socket.on("room too big", () => {
     setState("too-big");
+})
+// this also disconnects us
+socket.on("room started :(", () => {
+    setState("game-started-without-us");
 })
 // game is about to start
 socket.on("game is about to start", () => {

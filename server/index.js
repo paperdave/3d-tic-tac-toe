@@ -97,6 +97,13 @@ function joinRoom(socket, room) {
         return;
     }
 
+    // if room is started, failll
+    if (rooms[room].isStarted) {
+        socket.emit("room started :(");
+        socket.disconnect();
+        return;
+    }
+
     // notify
     rooms[room].players.forEach(sock => {
         sock.emit("player join", SocketToPlayer(socket));

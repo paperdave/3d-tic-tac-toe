@@ -6,7 +6,6 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <title>3D Tic Tac Toe</title>
-    <script src="/socket.io/socket.io.js"></script>
     <style>
 
         :root {
@@ -315,6 +314,20 @@
                     <button class="new-room">Join Empty Room</button>
                 </p>
             </section>
+
+            <section class="state show:game-started-without-us">
+                <p>Uh Oh!</p>
+                <p class="almost-sides a-slightly-smaller-font">
+                    That room has already started their game. You can generate a new room url by clicking the button below.
+                </p>
+                <br>
+                <p class="almost-sides a-slightly-smaller-font">
+                    In the future you may be able to spectate games
+                </p>
+                <p>
+                    <button class="new-room">Join Empty Room</button>
+                </p>
+            </section>
             
             <section class="state show:disconnected">
                 <p>Uh Oh!</p>
@@ -369,9 +382,15 @@
         Array.from(document.getElementsByClassName("show:loading")).forEach(x => x.style.display="initial");        
     </script>
 
+    <!-- START SCRIPTS -->
+    <script src="/socket.io/socket.io.js"></script>
+
     <script src="./lib/three.js"></script>
     <script src="./lib/OrbitControlsSmooth.js"></script>
+    
     <script src="./lib.js"></script>
+    
     <script src="./game.js"></script>
+    <!-- END SCRIPTS -->
 </body>
 </html>
