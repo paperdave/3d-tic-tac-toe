@@ -247,9 +247,19 @@
             height: 20%;
             line-height: 20vh;
         }
+
+        #mobile-swipe-to-refresh {
+            position: fixed;
+            top: 0;
+            height: 0.5in;
+            width: 100%;
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
+    <div id="mobile-swipe-to-refresh"></div>
+
     <div class="bg"></div>
 
     <div id="hud">
@@ -283,7 +293,7 @@
     </div>
     
     <div style="display:flex;flex-direction:column;min-height:100%;">
-        <div style="flex-grow: 1;" id="state-surface">
+        <div style="flex-grow:1;-webkit-tap-highlight-color:rgba(0,0,0,0)" id="state-surface">
             <header class="hide:game">3D Tic Tac Toe</header>
             
             <section class="state enable-your-javascript show:no-js">
@@ -390,6 +400,7 @@
     
     <script src="./lib.js"></script>
     
+    <script src="./win-detect.js"></script>
     <script src="./game.js"></script>
     <!-- END SCRIPTS -->
 </body>

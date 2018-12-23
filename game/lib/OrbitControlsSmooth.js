@@ -326,7 +326,6 @@ THREE.OrbitControls = function (object, domElement) {
     }
 
     function onMouseDown(event) {
-
         if (scope.enabled === false) return;
         event.preventDefault();
 
@@ -497,7 +496,8 @@ THREE.OrbitControls = function (object, domElement) {
     }
 
     function touchstart(event) {
-        
+        if (event.target.id === "mobile-swipe-to-refresh") return;
+
         if (scope.enabled === false) return;
 
         switch (event.touches.length) {
@@ -543,6 +543,7 @@ THREE.OrbitControls = function (object, domElement) {
     }
 
     function touchmove(event) {
+        if (event.target.id === "mobile-swipe-to-refresh") return;
 
         if (scope.enabled === false) return;
 

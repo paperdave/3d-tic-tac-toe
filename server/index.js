@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const uuidv4 = require('uuid/v4');
+const doTheWinDetect = require("../game/win-detect");
 
 // Write a default .ENV if one does not exist
 if (!fs.existsSync(".env")) {
@@ -178,22 +179,38 @@ function paintCube(socket, room, position) {
     // ignore if room not started
     if (!rooms[room].isStarted) return console.log("[paintCube] not started");
 
-    // ignore if not turn
-
-
-    // ignore if taken
-
-
-    // go!
+    // index
     var index = 0;
 
-    rooms[room].players.forEach((sock,i) => {
+    rooms[room].players.forEach((sock, i) => {
         if (sock === socket) {
             index = i;
             return;
         };
     });
 
+    // ignore if not turn
+    if(rooms[room].turn !== index) return console.log("[paintCube] not turn");
+
+    // ignore if taken
+    let x = position[0];
+    let y = position[1];
+    let z = position[2];
+    if(rooms[room].map[x][y][z] !== -1) return console.log("[paintCube] taken");
+
+    // set the block
+    rooms[room].map[x][y][z] = index;
+
+    // push turn up
+    rooms[room].turn = (rooms[room].turn + 1) % (rooms[room].players.length);
+
+    // win detec
+    const winner = doTheWinDetect(rooms[room].map);
+    if (winner !== null) {
+        console.log("THE WIN HAPPENED (player " + (winner+1) + ")");
+    }
+
+    // notify
     rooms[room].players.forEach(sock => {
         if (sock === socket) { return; };
         sock.emit("paint", position, index);
@@ -201,7 +218,6 @@ function paintCube(socket, room, position) {
 }
 
 io.on("connection", (socket) => {
-    // make a game code for this game
     socket.id = uuidv4();
     socket.name = null;
     

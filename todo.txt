@@ -2,23 +2,25 @@ updated 2018-12-17
 
 [X] clicky -> send a [[move]] message to server
 [X] server send that message
-[ ] (checking its validity)
+[X] (checking its validity)
 [X] game recieve other moves and handle turn correctly
 
 [X] whos turn bottom hud
-[ ] text @ top saying "It's <name>'s turn"
+[X] text @ top saying "It's <name>'s turn"
+[ ] nextup: win sequence
 
 [X] win checking
 [ ] on the server
 [X] on the game itself
-[ ] fix diagonal across entire map not fail
+[X] fix diagonal across entire map not fail
 
 [ ] have server kick the players from the socket when they win-ed the game
 [ ] have the game go to a win screen with a `New Room` button.
 
 [ ] if you join a room while it is being used in a game show message + `New Room` button.
 
-[ ] if change url to something else go and refresh
+[X] if change url to something else go and refresh
+[X] make de mobile users happy
 
 [ ] polish + fx
 	[ ] shakey rotate on cubes when they are painted
