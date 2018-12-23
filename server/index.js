@@ -133,7 +133,6 @@ function leaveRoom(socket, room) {
     // if empty destroy room
     if(rooms[room].players.length === 0) {
         delete rooms[room];
-        console.log("cleaning up room " + room);
     } else {
         // reassign leader
         if(socket.id === rooms[room].leader.id) {
@@ -151,14 +150,10 @@ function startRoom(socket, room) {
     if (rooms[room].isStarted) return console.log("[start] started");
     
     // ignore if not leader
-    console.log(socket.id);
-    console.log(rooms[room].leader.id);
     if (rooms[room].leader.id !== socket.id) return console.log("[start] no leader");
 
     // ignore if room is less than 2
     if (rooms[room].players.length < 2) return console.log("[start] room size");
-
-    console.log("the game is about to start");
 
     rooms[room].isStarted = true;
     rooms[room].players.forEach(sock => {
@@ -178,7 +173,9 @@ function paintCube(socket, room, position) {
 
     // ignore if not turn
 
+
     // ignore if taken
+
 
     // go!
     var index = 0;
@@ -224,8 +221,9 @@ io.on("connection", (socket) => {
         if(0
             || T(socket.name === null, "[name entry] Name Already Set")
             || T(is(newname, "string"), "[name entry] Invalid Type")
-            || T(newname.length < 16, "[name entry] Invalid Length")
-            || T(/[^a-zA-Z0-9 ]/.exec(newname) === null, "[name entry] Invalid Characters")
+            || T(newname.length >= 2, "[name entry] Invalid Length")
+            || T(newname.length <= 12, "[name entry] Invalid Length")
+            || T(/[^a-zA-Z0-9  '"]/.exec(newname) === null, "[name entry] Invalid Characters")
         ) return;
 
         socket.name = newname;

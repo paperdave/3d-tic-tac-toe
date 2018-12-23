@@ -14,6 +14,7 @@
             --green: rgb(66, 255, 113);
             --blue: rgb(66, 69, 255);
             --purple: rgb(186, 66, 255);
+            user-select: none;
         }
 
         * {box-sizing: border-box;}
@@ -62,6 +63,7 @@
             background: #ffffff;
             border-radius: 3px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.356);
+            cursor: pointer;
         }
         .almost-sides {
             max-width: calc(100vw - 25px);
@@ -92,7 +94,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
             width: min-content;
             /* margin: 1.5em auto; */
-            user-select: all;
+            user-select: none;
 
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -102,6 +104,8 @@
 
             transform: translateY(-3.5px);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+
+            user-select: all;
         }
         #join-url-container {
             /* padding: 1.25em 1em; */
@@ -232,6 +236,18 @@
         .bh-player.disabled {
             display: none;
         }
+
+        button[disabled] {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .top-status {
+            position: fixed;
+            width: 100%;
+            height: 20%;
+            line-height: 20vh;
+        }
     </style>
 </head>
 <body>
@@ -241,6 +257,14 @@
         <div style="max-width:500px;margin:auto;position:relative;">
             <div id="name-in-corner"></div>
         </div>
+        <p class="top-status state show:game">
+            <span class="top-status-turn">
+                It's <span class="current-player-turn-name"></span> turn
+            </span>
+            <span class="top-status-winner">
+                
+            </span>
+        </p>
         <div class="bottom-hud state show:game">
             <div style="display:flex;box-shadow:0 -4px 10px rgba(0,0,0,0.2)" class="bottom-hud">
                 <div class="bh-player red bh1i">
@@ -277,6 +301,9 @@
                     <p>
                         <input type="text" placeholder="Name" autocomplete="false" id="name-input">
                         <button type="submit">Continue</button>
+                    </p>
+                    <p class="a-slightly-smaller-font name-entry-error">
+                        
                     </p>
                 </form>
             </section>
@@ -325,7 +352,7 @@
                 </div>
                 <div id="start-game-section">
                     <p>
-                        <button id="start-game-button">Start Game</button>
+                        <button id="start-game-button" disabled>Start Game</button>
                     </p>
                 </div>
             </section>

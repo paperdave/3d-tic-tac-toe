@@ -1,4 +1,4 @@
-var name = "name not set name not set";
+var name = "";
 var socket = io();
 var room = null;
 var players = null;
@@ -16,6 +16,9 @@ var selectedObject;
 var renderer;
 var turn = 0;
 var allow3DClicks = false;
+var hasEnteredName = false;
+var started3D = false;
+var gameWinner = -1;
 
 //#region Socket Handlers 
 socket.on("socket code", (code) => {
@@ -23,7 +26,7 @@ socket.on("socket code", (code) => {
 
     socket.emit("join room", room);
 
-    if (name !== "name not set name not set") {
+    if (hasEnteredName) {
         socket.emit("name entry", name);
     }
 
@@ -118,6 +121,12 @@ function updateLobbyUI() {
         $("#start-game-section").hide();
     }
 
+    if(players.length >= 1) {
+        $("#start-game-button").removeAttribute("disabled");
+    } else {
+        $("#start-game-button").setAttribute("disabled", "yes");
+    }
+
     // player information
     for (let index = 0; index < 4; index++) {
         let isInLobby = false;
@@ -181,16 +190,42 @@ $("#join-url-container").appendChild($("#join-url"));
 // initial state
 setState('name-screen');
 
+function namevalid() {
+    let error = $(".name-entry-error");
+    if (name.length > 12) {
+        error.innerHTML = "Names must be at most 12 characters.";
+    }
+    else if (/[^a-zA-Z0-9 '"]/.exec(name) !== null) {
+        error.innerHTML = "You cannot have special characters in your name.";
+    }
+    else {
+        error.innerHTML = "";
+        return true;
+    }
+    return false;
+}
 // logic for name entry
-function handleNameEnter() {
+$("#name-input").on("input", () => {
+    if (hasEnteredName) return;
+
     var elem = $("#name-input");
-    name = elem.value;
+    name = elem.value.trim().replace(/  +/g, " ");
+    namevalid();
+});
+
+function handleNameEnter() {
+    if (name.length < 2) {
+        $(".name-entry-error").innerHTML = "Names must be at least 2 characters.";
+        return;
+    }
+    if(!namevalid()) return;
 
     $("#name-in-corner").innerHTML = name;
 
     setState("lobby");
 
     socket.emit("name entry", name);
+    hasEnteredName = true;
 }
 
 // logic for the "room is full" state
@@ -224,6 +259,7 @@ $("#start-game-button").on("click", () => {
 //#region Game State
 
 function updateGameHudUI() {
+    
     for (let index = 0; index < 4; index++) {
         let isInLobby = false;
         let playerName = null;
@@ -255,6 +291,17 @@ function updateGameHudUI() {
         } else {
             elem.classList.add("disabled");
         }
+
+        if (turn === index) {
+            $$(".current-player-turn-name").forEach(x => {
+                x.innerHTML = (index === our_index) ? "Your" : (playerName + "'s");
+            });
+        }
+        if (gameWinner === index) {
+            $$(".current-player-turn-name").forEach(x => {
+                x.innerHTML = (index === our_index) ? "You Won" : (playerName + "'s Wins");
+            });
+        }
     }
 }
 
@@ -269,20 +316,29 @@ function handleMouseInput(x, y, z) {
     updateGameHudUI();
 }
 
+function handleWinning() {
+    let winner = doTheWinDetect();
+    if(winner !== null) {
+        console.log("win by player #" + (winner+1));
+        turn = -1;
+        updateGameHudUI();
+    }
+}
+
 // when you really don't know what to name Stuff
 function doTheWinDetect() {
     // for each layer check a win
     for (let x = 0; x < 3; x++) {
         const slice = map[x];
 
-        // horizontal
+        // x+z col
         for (let y = 0; y < 3; y++) {
             const col = slice[y];
             if (col[0] === col[1] && col[1] === col[2] && col[0] !== -1) {
                 return col[0];
             }
         }
-        // vertical
+        // x+z col
         for (let z = 0; z < 3; z++) {
             if (slice[0][z] === slice[1][z] && slice[1][z] === slice[2][z] && slice[0][z] !== -1) {
                 return slice[0][z];
@@ -292,18 +348,67 @@ function doTheWinDetect() {
         if (slice[0][0] === slice[1][1] && slice[1][1] === slice[2][2] && slice[1][1] !== -1) {
             return slice[1][1];
         }
-        if (slice[2][0] === slice[1][1] && slice[1][1] === slice[0][2] && slice[1][1] !== -1) {
+        else if (slice[2][0] === slice[1][1] && slice[1][1] === slice[0][2] && slice[1][1] !== -1) {
             return slice[1][1];
         }
     }
+    
+    // for each Y value check a win
+    for (let y = 0; y < 3; y++) {
+        // check all values in a y+x col ... done above
 
+        // check all values in a y+z col
+        for (let z = 0; z < 3; z++) {
+            if (map[0][y][z] === map[1][y][z] && map[0][y][z] === map[2][y][z] && map[0][y][z] !== -1) {
+                return map[0][y][z];
+            }
+        }
+
+        // diagonal edge cases
+        if (map[0][y][0] === map[1][y][1] && map[1][y][1] === map[2][y][2] && map[1][y][1] !== -1) {
+            return map[1][y][1];
+        }
+        else if (map[2][y][0] === map[1][y][1] && map[1][y][1] === map[0][y][2] && map[1][y][1] !== -1) {
+            return map[1][y][1];
+        }
+    }
+
+    // for each Z value check a win
+    for (let z = 0; z < 3; z++) {
+        // check all values in a z+x col ...done above
+
+        // check all values in a y+z col ...done above
+
+        // diagonal edge cases
+        if (map[0][0][z] === map[1][1][z] && map[1][1][z] === map[2][2][z] && map[1][1][z] !== -1) {
+            return map[1][1][z];
+        }
+        else if (map[2][0][z] === map[1][1][z] && map[1][1][z] === map[0][2][z] && map[1][1][z] !== -1) {
+            return map[1][1][z];
+        }
+    }
+
+    // big diagonal edge case
+    if (map[0][0][0] === map[1][1][1] && map[1][1][1] === map[2][2][2] && map[1][1][1] !== -1) {
+        return map[1][1][z];
+    }
+    if (map[2][0][0] === map[1][1][1] && map[1][1][1] === map[0][2][2] && map[1][1][1] !== -1) {
+        return map[1][1][z];
+    }
+    if (map[2][0][2] === map[1][1][1] && map[1][1][1] === map[0][2][0] && map[1][1][1] !== -1) {
+        return map[1][1][z];
+    }
+    if (map[0][0][2] === map[1][1][1] && map[1][1][1] === map[2][2][0] && map[1][1][1] !== -1) {
+        return map[1][1][z];
+    }
+    
     return null;
 }
 
 function setCubeColor(x, y, z, id) {
     cubes[x][y][z].paint(id);
     map[x][y][z] = id;
-
+    handleWinning();
 }
 
 function MESH() {
@@ -405,9 +510,10 @@ function GameCube(x, z, y) {
     return self;
 }
 
-var started3D = false;
 function start3d() {
     if (started3D) return;
+    let drag = 999;
+
     started3D = true;
 
     console.info("Starting 3D...");
@@ -440,11 +546,12 @@ function start3d() {
     }
     function onClick(event) {
         if (!allow3DClicks) return;
-
+        
         onTouchMove(event);
 
+        if (drag > 5) return;
+
         if (selectedObject && our_index === turn && selectedObject.cubeEntity.paintedColor === -1) {
-            console.log(selectedObject.cubeEntity);
             selectedObject.cubeEntity.onClick();
         };
     }
@@ -456,7 +563,7 @@ function start3d() {
         camera.updateProjectionMatrix();
         renderer.setSize(width, height);
     }
-    
+
     function checkIntersection() {
         
         if(our_index !== turn) {
@@ -483,10 +590,16 @@ function start3d() {
         }
     }
     
-    window.addEventListener('resize', onWindowResize, false);
-    window.addEventListener('mousemove', onTouchMove);
-    window.addEventListener('touchmove', onTouchMove);
-    window.addEventListener('click', onClick)
+    window.on('resize', onWindowResize, false);
+    window.on('mousemove', (event) => {
+        onTouchMove(event);
+        drag++;
+    });
+    window.on('mousedown', () => {
+        drag = 0;
+    });
+    window.on('touchmove', onTouchMove);
+    window.on('click', onClick);
 
     function addCube(x,y,z) {
         const cube = GameCube((x - 1) * 2, (y - 1) * 2, (z - 1)*2);
@@ -516,8 +629,6 @@ function start3d() {
         controls.update();
     
         renderer.render(scene, camera);
-        // composer.render();
-    
     };
     
     animate();
