@@ -225,6 +225,11 @@ $("#name-input").on("input", () => {
 });
 
 function handleNameEnter() {
+    if (hasEnteredName) return;
+
+    var elem = $("#name-input");
+    name = elem.value.trim().replace(/  +/g, " ");
+    
     if (name.length < 2) {
         $(".name-entry-error").innerHTML = "Names must be at least 2 characters.";
         return;
@@ -237,6 +242,8 @@ function handleNameEnter() {
 
     socket.emit("name entry", name);
     hasEnteredName = true;
+
+    elem.blur();
 }
 
 // logic for the "room is full" state
@@ -251,7 +258,7 @@ $$(".new-room").forEach(x => x.on("click", () => {
 // focus the name input
 $("#name-input").focus();
 // also focus the name input
-$("#state-surface").on("click", function (ev) {
+$("#state-surface").on("mouseup", function (ev) {
     if (state === "name-screen" && ev.target.id === "state-surface") {
         $("#name-input").focus();
     }
@@ -406,16 +413,16 @@ function doTheWinDetect() {
 
     // big diagonal edge case
     if (map[0][0][0] === map[1][1][1] && map[1][1][1] === map[2][2][2] && map[1][1][1] !== -1) {
-        return map[1][1][z];
+        return map[1][1][1];
     }
     if (map[2][0][0] === map[1][1][1] && map[1][1][1] === map[0][2][2] && map[1][1][1] !== -1) {
-        return map[1][1][z];
+        return map[1][1][1];
     }
     if (map[2][0][2] === map[1][1][1] && map[1][1][1] === map[0][2][0] && map[1][1][1] !== -1) {
-        return map[1][1][z];
+        return map[1][1][1];
     }
     if (map[0][0][2] === map[1][1][1] && map[1][1][1] === map[2][2][0] && map[1][1][1] !== -1) {
-        return map[1][1][z];
+        return map[1][1][1];
     }
     
     return null;
@@ -615,7 +622,7 @@ function start3d() {
         drag = 0;
     });
     window.on('touchmove', onTouchMove);
-    window.on('click', onClick);
+    window.on('mouseup', onClick);
 
     function addCube(x,y,z) {
         const cube = GameCube((x - 1) * 2, (y - 1) * 2, (z - 1)*2);
@@ -659,5 +666,13 @@ function start3d() {
         allow3DClicks = true;
     }, 500);
 }
+
+//#endregion
+
+//#region
+
+window.on("popstate", () => {
+    location.reload();
+});
 
 //#endregion
