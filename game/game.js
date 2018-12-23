@@ -121,11 +121,7 @@ function updateLobbyUI() {
         $("#start-game-section").hide();
     }
 
-    if(players.length >= 1) {
-        $("#start-game-button").removeAttribute("disabled");
-    } else {
-        $("#start-game-button").setAttribute("disabled", "yes");
-    }
+    var canStartGame = true;
 
     // player information
     for (let index = 0; index < 4; index++) {
@@ -145,6 +141,10 @@ function updateLobbyUI() {
             if (isInLobby) {
                 playerName = player.name || "(Player)";
                 playerColor = "green";
+
+                if(!player.name) {
+                    canStartGame = false;
+                }
             }
         }
 
@@ -157,6 +157,12 @@ function updateLobbyUI() {
             elem.classList.add("unjoined");
             elem.$(".player-label").innerHTML = "(Open)";
         }
+    }
+
+    if (players.length >= 1 && canStartGame) {
+        $("#start-game-button").removeAttribute("disabled");
+    } else {
+        $("#start-game-button").setAttribute("disabled", "yes");
     }
 }
 
@@ -229,13 +235,13 @@ function handleNameEnter() {
 }
 
 // logic for the "room is full" state
-$("#new-room").on("click", () => {
+$$(".new-room").forEach(x => x.on("click", () => {
     // reload!
     fetch("/empty-room").then(x => x.text()).then(room => {
         location.href = "/#" + room;
         location.reload();
     });
-});
+}));
 
 // focus the name input
 $("#name-input").focus();
@@ -293,15 +299,19 @@ function updateGameHudUI() {
         }
 
         if (turn === index) {
-            $$(".current-player-turn-name").forEach(x => {
-                x.innerHTML = (index === our_index) ? "Your" : (playerName + "'s");
-            });
+            $(".current-player-turn-name").innerHTML = (index === our_index) ? "Your" : (playerName + "'s");
         }
         if (gameWinner === index) {
-            $$(".current-player-turn-name").forEach(x => {
-                x.innerHTML = (index === our_index) ? "You Won" : (playerName + "'s Wins");
-            });
+            $(".top-status-winner").innerHTML = (index === our_index) ? "You Won" : (playerName + "'s Wins");
         }
+    }
+    if(gameWinner !== -1) {
+        $(".top-status-turn").hide();
+        $(".top-status-winner").show();
+    } else {
+        $(".top-status-turn").show();
+        $(".top-status-winner").hide();
+
     }
 }
 
@@ -320,7 +330,8 @@ function handleWinning() {
     let winner = doTheWinDetect();
     if(winner !== null) {
         console.log("win by player #" + (winner+1));
-        turn = -1;
+        turn = -10
+        gameWinner = winner;
         updateGameHudUI();
     }
 }
