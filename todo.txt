@@ -13,12 +13,12 @@ updated 2018-12-23
 [X] on the game itself
 [X] fix diagonal across entire map not fail
 
-[ ] win bottom ui
-[ ] restart a game n stuff
+[X] win bottom ui
+[X] restart a game n stuff
 	- just set state to lobby
 
 [ ] handle discconnect / reconnect DURING a game 
-[ ] handle discconnect at END of a game (should be simple)
+[X] handle discconnect at END of a game (should be simple)
 [ ] if server destroys a running game on accident (both disconnect+reconnect / shutdown) then try to recovver
 	- tell sockets to send a copy of the map and players
 	- if identical then set the room state

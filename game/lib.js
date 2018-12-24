@@ -7,8 +7,8 @@ var $id = document.getElementById.bind(document);
 EventTarget.prototype.on = EventTarget.prototype.addEventListener;
 EventTarget.prototype.off = EventTarget.prototype.removeEventListener;
 EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent;
-HTMLElement.prototype.hide = function(){this.style.display="none";}
-HTMLElement.prototype.show = function(){this.style.display="initial";}
+HTMLElement.prototype.hide = function(){this.classList.add("HIDDENJS");}
+HTMLElement.prototype.show = function(){this.classList.remove("HIDDENJS");}
 HTMLElement.prototype.$ = HTMLElement.prototype.querySelector;
 HTMLElement.prototype.$$ = function(q) { return Array.from(HTMLElement.prototype.querySelector.bind(this)(q)); };
 // end basically jquery

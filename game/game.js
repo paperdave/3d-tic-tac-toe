@@ -115,7 +115,7 @@ socket.on("paint", (pos, who) => {
 });
 socket.on("back to lobby, guys and gals", () => {
     setState("lobby");
-
+    stop3d();
 });
 //#endregion
 
@@ -349,14 +349,13 @@ function handleMouseInput(x, y, z) {
 function handleWinning() {
     let winner = doTheWinDetect(map);
     if(winner !== null) {
-        console.log("win by player #" + (winner+1));
         turn = -10
         gameWinner = winner;
         updateGameHudUI();
 
         setTimeout(() => {
             $(".end-game-controls").classList.add("show");
-        }, 1500);
+        }, 999);
     }
 }
 
@@ -475,6 +474,9 @@ function stop3d() {
     camera = null;
     mouse = null;
     renderer = null;
+    turn = 0;
+    map = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
+    cubes = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
 
     $("#game-surface").remove();
 
@@ -483,6 +485,13 @@ function stop3d() {
     window.off('mousedown', mouseDown);
     window.off('touchmove', onTouchMove);
     window.off('click', onClick);
+
+    $(".end-game-controls").classList.remove("show");
+
+    $(".top-status-winner").innerHTML = "";
+
+    $(".top-status-turn").hide();
+    $(".top-status-winner").hide();
 }
 function onTouchMove(event) {
     if (event.target.id === "mobile-swipe-to-refresh") return true;
@@ -553,8 +562,6 @@ function start3d() {
     drag = 999;
 
     started3D = true;
-
-    console.info("Starting 3D...");
 
     updateGameHudUI();
 

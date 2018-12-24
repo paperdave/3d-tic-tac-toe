@@ -82,9 +82,6 @@
             top: 10px;
             right: 20px;
         }
-        .state {
-            display:none;
-        }
 
         #join-url {
             color: black;
@@ -272,6 +269,8 @@
             width: 100%;
             z-index: 100;
         }
+
+        .HIDDENJS{display:none;}
     </style>
 </head>
 <body>
@@ -283,7 +282,7 @@
         <div style="max-width:500px;margin:auto;position:relative;">
             <div id="name-in-corner"></div>
         </div>
-        <p class="top-status state show:game">
+        <p class="top-status HIDDENJS show:game">
             <span class="top-status-turn">
                 It's <span class="current-player-turn-name"></span> turn
             </span>
@@ -291,7 +290,7 @@
                 
             </header>
         </p>
-        <div class="bottom-hud state show:game">
+        <div class="bottom-hud HIDDENJS show:game">
             <div style="display:flex;box-shadow:0 -4px 10px rgba(0,0,0,0.2)" class="bottom-hud">
                 <div class="bh-player red bh1i">
                     <div class="bh-name"></div>
@@ -318,15 +317,15 @@
         <div style="flex-grow:1;-webkit-tap-highlight-color:rgba(0,0,0,0)" id="state-surface">
             <header class="hide:game">3D Tic Tac Toe</header>
             
-            <section class="state enable-your-javascript show:no-js">
+            <section class="HIDDENJS enable-your-javascript show:no-js">
                 <p>Please Enable JavaScript</p>
             </section>
 
-            <section class="state show:loading">
+            <section class="HIDDENJS show:loading">
                 <p>loading</p>
             </section>
             
-            <section class="state show:name-screen">
+            <section class="HIDDENJS show:name-screen">
                 <p>Enter your Name</p>
                 <form submit="handleNameEnter">
                     <p>
@@ -339,7 +338,7 @@
                 </form>
             </section>
             
-            <section class="state show:too-big">
+            <section class="HIDDENJS show:too-big">
                 <p>Uh Oh!</p>
                 <p class="almost-sides a-slightly-smaller-font">That room is already full (4 Players Per Room). You can generate a new room url by clicking the button below.</p>
                 <p>
@@ -347,7 +346,7 @@
                 </p>
             </section>
 
-            <section class="state show:game-started-without-us">
+            <section class="HIDDENJS show:game-started-without-us">
                 <p>Uh Oh!</p>
                 <p class="almost-sides a-slightly-smaller-font">
                     That room has already started their game. You can generate a new room url by clicking the button below.
@@ -361,13 +360,13 @@
                 </p>
             </section>
             
-            <section class="state show:disconnected">
+            <section class="HIDDENJS show:disconnected">
                 <p>Uh Oh!</p>
                 <p class="almost-sides">You got disconnected from your game. Dont close the tab, we will reconnect you
                     automatically.</p>
             </section>
             
-            <section class="state show:lobby">
+            <section class="HIDDENJS show:lobby">
                 <p class="almost-sides">Send this URL to a friend, and wait for them to join</p>
             
                 <div id="join-url-container">
@@ -402,7 +401,7 @@
                 </div>
             </section>
 
-            <section id="canvas-container" class="state show:game">
+            <section id="canvas-container" class="HIDDENJS show:game">
             </section>
         </div>
         <a class="hide:game" href="https://davecode.me/made-with-love" style="text-decoration:none">
@@ -410,8 +409,8 @@
         </a>
     </div>
     <script>
-        Array.from(document.getElementsByClassName("show:no-js")).forEach(x => x.style.display="none");        
-        Array.from(document.getElementsByClassName("show:loading")).forEach(x => x.style.display="initial");        
+        Array.from(document.getElementsByClassName("show:no-js")).forEach(x => x.classList.add("HIDDENJS"));        
+        Array.from(document.getElementsByClassName("show:loading")).forEach(x => x.classList.remove("HIDDENJS"));        
     </script>
 
     <!-- START SCRIPTS -->
