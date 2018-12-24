@@ -141,15 +141,21 @@ function leaveRoom(socket, room) {
     // if empty destroy room
     if(rooms[room].players.length === 0) {
         delete rooms[room];
+        console.log("delete room " + room);
     } else {
+        // dont reassign leader if non lobby
+        if(rooms[room].isStarted) {
+            return;
+        }
+
         // reassign leader
         if(socket.id === rooms[room].leader.id) {
             rooms[room].leader = rooms[room].players[0];
             rooms[room].leader.emit("youre leader");
         }
-
     }
 }
+
 function startRoom(socket, room) {
     // ignore if room is gone
     if (!(room in rooms)) return console.log("[start] no room exist");
@@ -171,6 +177,25 @@ function startRoom(socket, room) {
     rooms[room].map = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
     rooms[room].turn = 0;
     rooms[room].isEnded = false;
+}
+function restartRoom(socket, room) {
+    // ignore if room is gone
+    if (!(room in rooms)) return console.log("[start] no room exist");
+
+    // ignore if room not started
+    if (!rooms[room].isStarted) return console.log("[start] started");
+
+    // ignore if not leader
+    if (rooms[room].leader.id !== socket.id) return console.log("[start] no leader");
+
+    rooms[room].isStarted = false;
+    rooms[room].players.forEach(sock => {
+        sock.emit("back to lobby, guys and gals");
+    });
+
+    delete rooms[room].map
+    delete rooms[room].turn;
+    delete rooms[room].isEnded;
 }
 function paintCube(socket, room, position) {
     // ignore if room is gone
@@ -207,7 +232,8 @@ function paintCube(socket, room, position) {
     // win detec
     const winner = doTheWinDetect(rooms[room].map);
     if (winner !== null) {
-        console.log("THE WIN HAPPENED (player " + (winner+1) + ")");
+        console.log("victory rolaye (player " + (winner+1) + ")");
+        rooms[room].isEnded = true;
     }
 
     // notify
@@ -281,6 +307,11 @@ io.on("connection", (socket) => {
         ) return;
         
         paintCube(socket, room, pos);
+    });
+    socket.on("restart", () => {
+        // figure out
+        console.log("wanna restart.");
+        restartRoom(socket, room)
     });
 });
 

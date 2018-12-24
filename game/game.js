@@ -19,6 +19,7 @@ var allow3DClicks = false;
 var hasEnteredName = false;
 var started3D = false;
 var gameWinner = -1;
+var drag = 900;
 
 //#region Socket Handlers 
 socket.on("socket code", (code) => {
@@ -84,7 +85,8 @@ socket.on("disconnect", () => {
     // to big will disconnect us, so ignore
     if (state == "too-big") return;
     if (state == "game-started-without-us") return;
-
+    if (gameWinner !== -1) return;
+    
     DisconnectedPrevState = state;
     setState("disconnected");
 });
@@ -111,6 +113,10 @@ socket.on("paint", (pos, who) => {
     
     updateGameHudUI();
 });
+socket.on("back to lobby, guys and gals", () => {
+    setState("lobby");
+
+});
 //#endregion
 
 //#region Before Game / Lobby UI
@@ -122,8 +128,10 @@ function updateLobbyUI() {
     // leader controls
     if (isLeader) {
         $("#start-game-section").show();
+        $(".restarts").show();
     } else {
         $("#start-game-section").hide();
+        $(".restarts").hide();
     }
 
     var canStartGame = true;
@@ -345,6 +353,10 @@ function handleWinning() {
         turn = -10
         gameWinner = winner;
         updateGameHudUI();
+
+        setTimeout(() => {
+            $(".end-game-controls").classList.add("show");
+        }, 1500);
     }
 }
 
@@ -453,9 +465,92 @@ function GameCube(x, z, y) {
     return self;
 }
 
+function stop3d() {
+    if (!started3D) return;
+
+    started3D = false;
+
+    scene = null;
+    raycaster = null;
+    camera = null;
+    mouse = null;
+    renderer = null;
+
+    $("#game-surface").remove();
+
+    window.off('resize', onWindowResize);
+    window.off('mousemove', onTouchMove);
+    window.off('mousedown', mouseDown);
+    window.off('touchmove', onTouchMove);
+    window.off('click', onClick);
+}
+function onTouchMove(event) {
+    if (event.target.id === "mobile-swipe-to-refresh") return true;
+    drag++;
+
+    var x, y;
+    if (event.changedTouches) {
+        x = event.changedTouches[0].pageX;
+        y = event.changedTouches[0].pageY;
+    } else {
+        x = event.clientX;
+        y = event.clientY;
+    }
+    mouse.x = (x / window.innerWidth) * 2 - 1;
+    mouse.y = - (y / window.innerHeight) * 2 + 1;
+    checkIntersection();
+}
+function onClick(event) {
+    if (!allow3DClicks) return;
+    if (event.target.id === "mobile-swipe-to-refresh") return true;
+
+    onTouchMove(event);
+
+    if (drag > 5) return;
+
+    if (selectedObject && our_index === turn && selectedObject.cubeEntity.paintedColor === -1) {
+        selectedObject.cubeEntity.onClick();
+    };
+}
+function onWindowResize() {
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+}
+function checkIntersection() {
+
+    if (our_index !== turn) {
+        if (selectedObject) selectedObject.cubeEntity.hoverOff();
+        selectedObject = null;
+        return;
+    }
+
+    raycaster.setFromCamera(mouse, camera);
+    var intersects = raycaster.intersectObjects([scene], true);
+    if (intersects.length > 0) {
+
+        if (intersects[0].object.isCube) {
+            if (selectedObject !== intersects[0].object) {
+                if (selectedObject) selectedObject.cubeEntity.hoverOff();
+                intersects[0].object.cubeEntity.hoverOn();
+            }
+            selectedObject = intersects[0].object;
+        }
+
+    } else {
+        if (selectedObject) selectedObject.cubeEntity.hoverOff();
+        selectedObject = null;
+    }
+}
+function mouseDown(event) {
+    if (event.target.id === "mobile-swipe-to-refresh") return true;
+    drag = 0
+}
 function start3d() {
     if (started3D) return;
-    let drag = 999;
+    drag = 999;
 
     started3D = true;
 
@@ -474,86 +569,10 @@ function start3d() {
     $("#canvas-container").appendChild(surf);
     surf.id = "game-surface";
     
-    function onTouchMove(event) {
-        var x, y;
-        if (event.changedTouches) {
-            x = event.changedTouches[0].pageX;
-            y = event.changedTouches[0].pageY;
-        } else {
-            x = event.clientX;
-            y = event.clientY;
-        }
-        mouse.x = (x / window.innerWidth) * 2 - 1;
-        mouse.y = - (y / window.innerHeight) * 2 + 1;
-        checkIntersection();
-    }
-    function onClick(event) {
-        if (!allow3DClicks) return;
-        
-        onTouchMove(event);
-
-        if (drag > 5) return;
-
-        if (selectedObject && our_index === turn && selectedObject.cubeEntity.paintedColor === -1) {
-            selectedObject.cubeEntity.onClick();
-        };
-    }
-    
-    function onWindowResize() {
-        var width = window.innerWidth;
-        var height = window.innerHeight;
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(width, height);
-    }
-
-    function checkIntersection() {
-        
-        if(our_index !== turn) {
-            if (selectedObject) selectedObject.cubeEntity.hoverOff();
-            selectedObject = null;
-            return;
-        }
-
-        raycaster.setFromCamera(mouse, camera);
-        var intersects = raycaster.intersectObjects([scene], true);
-        if (intersects.length > 0) {
-    
-            if (intersects[0].object.isCube) {
-                if (selectedObject !== intersects[0].object) {
-                    if (selectedObject) selectedObject.cubeEntity.hoverOff();
-                    intersects[0].object.cubeEntity.hoverOn();
-                }
-                selectedObject = intersects[0].object;
-            }
-    
-        } else {
-            if (selectedObject) selectedObject.cubeEntity.hoverOff();
-            selectedObject = null;
-        }
-    }
-    
-    window.on('orientationchange', () => {
-        
-        onWindowResize();
-        setTimeout(onWindowResize,500);
-
-    }, false);
     window.on('resize', onWindowResize, false);
-    window.on('mousemove', (event) => {
-        if (event.target.id === "mobile-swipe-to-refresh") return true;
-
-        onTouchMove(event);
-        drag++;
-    });
-    window.on('mousedown', (event) => {
-        if (event.target.id === "mobile-swipe-to-refresh") return true;
-        drag = 0;
-    });
-    window.on('touchmove', (event) => {
-        if (event.target.id === "mobile-swipe-to-refresh") return true;
-        onTouchMove(event);
-    });
+    window.on('mousemove', onTouchMove);
+    window.on('mousedown', mouseDown);
+    window.on('touchmove', onTouchMove);
     window.on('click', onClick);
 
     function addCube(x,y,z) {
@@ -578,6 +597,8 @@ function start3d() {
     controls.damping = 0.095;
     
     var animate = function () {
+        if(!started3D) return;
+
         cubes.forEach(x=>x.forEach(x=>x.forEach(x=>x.update())));
         requestAnimationFrame(animate);
     
@@ -598,6 +619,10 @@ function start3d() {
         allow3DClicks = true;
     }, 500);
 }
+
+$(".restarts").on("click", () => {
+    socket.emit("restart");
+});
 
 //#endregion
 

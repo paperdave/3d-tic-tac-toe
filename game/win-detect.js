@@ -1,4 +1,10 @@
-(function(){
+// Win Detection
+
+// most of this is commented out due to how node scopes things,
+// and how the browser scopes things, function <name>() goes to
+// global scope.
+
+// (function(){
     function doTheWinDetect(map) {
         // for each layer check a win
         for (let x = 0; x < 3; x++) {
@@ -80,7 +86,7 @@
     if (typeof module !== "undefined") {
         module.exports = doTheWinDetect;
     }
-    if (typeof window !== "undefined") {
-        window.doTheWinDetect = doTheWinDetect;
-    }
-})();
+//     if (typeof window !== "undefined") {
+//         window.doTheWinDetect = doTheWinDetect;
+//     }
+// })();

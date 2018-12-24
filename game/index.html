@@ -197,13 +197,30 @@
         .invisible {
             opacity: 0;
         }
-        .bottom-hud {
+        .bottom-hud, .end-game-controls {
             height: 6em;
             width: 100%;
             position: fixed;
             bottom: 0;
             left: 0;
         }
+        .end-game-controls {
+            transform: translateY(6em);
+            background: #fff;
+            color: #000;
+            line-height: 6em;
+            text-align: center;
+            z-index: 100;
+        }
+        .end-game-controls button {
+            background: #7992ff;
+            color: white;
+        }
+        .end-game-controls.show {
+            transform: translateY(0);
+            transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+
         .bh-player {
             flex-grow: 1;
             background:hsla(0, 0%, 0%, 0.4);
@@ -290,6 +307,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="end-game-controls">
+        <button class="new-room">Join New Room</button>&nbsp;&nbsp;
+        <button class="restarts">Go to Lobby</button>
     </div>
     
     <div style="display:flex;flex-direction:column;min-height:100%;">

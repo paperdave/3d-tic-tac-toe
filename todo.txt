@@ -1,4 +1,4 @@
-updated 2018-12-17
+updated 2018-12-23
 
 [X] clicky -> send a [[move]] message to server
 [X] server send that message
@@ -7,17 +7,24 @@ updated 2018-12-17
 
 [X] whos turn bottom hud
 [X] text @ top saying "It's <name>'s turn"
-[ ] nextup: win sequence
 
 [X] win checking
-[ ] on the server
+[X] on the server
 [X] on the game itself
 [X] fix diagonal across entire map not fail
 
-[ ] have server kick the players from the socket when they win-ed the game
-[ ] have the game go to a win screen with a `New Room` button.
+[ ] win bottom ui
+[ ] restart a game n stuff
+	- just set state to lobby
 
-[ ] if you join a room while it is being used in a game show message + `New Room` button.
+[ ] handle discconnect / reconnect DURING a game 
+[ ] handle discconnect at END of a game (should be simple)
+[ ] if server destroys a running game on accident (both disconnect+reconnect / shutdown) then try to recovver
+	- tell sockets to send a copy of the map and players
+	- if identical then set the room state
+
+
+[X] if you join a room while it is being used in a game show message + `New Room` button.
 
 [X] if change url to something else go and refresh
 [X] make de mobile users happy
@@ -25,5 +32,4 @@ updated 2018-12-17
 [ ] polish + fx
 	[ ] shakey rotate on cubes when they are painted
 	[ ] particles in the background maybe
-	[ ] fade/animate between states
-	
+	[ ] fade/animate between states n stuff
