@@ -5,6 +5,8 @@ const chalk = require('chalk');
 const uuidv4 = require('uuid/v4');
 const doTheWinDetect = require("../game/win-detect");
 
+process.cd(path.join(__dirname, "../"));
+
 // Write a default .ENV if one does not exist
 if (!fs.existsSync(".env")) {
     let dotenvdata = "# Application Configuration File\n"
