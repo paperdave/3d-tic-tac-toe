@@ -6,7 +6,7 @@ var $tagName = (q) => Array.from(document.getElementsByTagName(q));
 var $id = document.getElementById.bind(document);
 EventTarget.prototype.on = EventTarget.prototype.addEventListener;
 EventTarget.prototype.off = EventTarget.prototype.removeEventListener;
-EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent;
+// EventTarget.prototype.emit = EventTarget.prototype.dispatchEvent;
 HTMLElement.prototype.hide = function(){this.classList.add("HIDDENJS");}
 HTMLElement.prototype.show = function(){this.classList.remove("HIDDENJS");}
 HTMLElement.prototype.$ = HTMLElement.prototype.querySelector;

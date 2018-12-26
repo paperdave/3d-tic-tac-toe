@@ -29,6 +29,8 @@ updated 2018-12-23
 [X] if change url to something else go and refresh
 [X] make de mobile users happy
 
+[ ] production builds
+
 [ ] polish + fx
 	[ ] shakey rotate on cubes when they are painted
 	[ ] particles in the background maybe

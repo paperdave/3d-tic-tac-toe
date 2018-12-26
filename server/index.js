@@ -12,6 +12,7 @@ if (!fs.existsSync(".env")) {
                     + "HTTPS_PORT=false\n"
                     + "HTTPS_KEY=keys/private.key\n"
                     + "HTTPS_CERT=keys/certificate.crt\n"
+                    + "STATIC_FOLDER=game\n"
 
     fs.writeFileSync(".env", dotenvdata);
     console.log(chalk.yellow("A default .env file was created, use this to configure the application."))
@@ -25,7 +26,7 @@ const express = require('express');
 const app = express();
 const io = require('socket.io')();
 
-app.use(express.static(path.join(__dirname, "../game")));
+app.use(express.static(path.join(__dirname, "../", process.env.STATIC_FOLDER)));
 
 const sockets = {};
 const rooms = {};

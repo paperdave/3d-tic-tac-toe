@@ -232,7 +232,7 @@ $("#name-input").on("input", () => {
     namevalid();
 });
 
-function handleNameEnter() {
+window.handleNameEnter = function() {
     if (hasEnteredName) return;
 
     var elem = $("#name-input");
