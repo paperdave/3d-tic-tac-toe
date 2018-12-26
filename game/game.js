@@ -20,6 +20,8 @@ var hasEnteredName = false;
 var started3D = false;
 var gameWinner = -1;
 var drag = 900;
+var isDragging = false;
+var showHelper = true;
 
 //#region Socket Handlers 
 socket.on("socket code", (code) => {
@@ -510,6 +512,12 @@ function stop3d() {
 function onTouchMove(event) {
     if (event.target.id === "mobile-swipe-to-refresh") return true;
     drag++;
+    if(drag > 5) {
+        if(allow3DClicks && isDragging && showHelper) {
+            showHelper = false;
+            $("#helper").style.opacity = "0";
+        }
+    }
 
     var x, y;
     if (event.changedTouches) {
@@ -530,6 +538,7 @@ function onClick(event) {
     onTouchMove(event);
 
     if (drag > 5) return;
+    isDragging = false;
 
     if (selectedObject && our_index === turn && selectedObject.cubeEntity.paintedColor === -1) {
         selectedObject.cubeEntity.onClick();
@@ -569,6 +578,7 @@ function checkIntersection() {
 }
 function mouseDown(event) {
     if (event.target.id === "mobile-swipe-to-refresh") return true;
+    isDragging = true;
     drag = 0
 }
 function start3d() {
@@ -632,13 +642,20 @@ function start3d() {
 
     setState("game");
 
+    showHelper = true;
+
     surf.classList.add("invisible");
     setTimeout(() => {
         surf.classList.remove("invisible");
     }, 100);
     setTimeout(() => {
         allow3DClicks = true;
-    }, 500);
+    }, 800);
+    setTimeout(() => {
+        if(showHelper) {
+            $("#helper").style.opacity = "1";
+        }
+    }, 3000);
 }
 
 $(".restarts").on("click", () => {
