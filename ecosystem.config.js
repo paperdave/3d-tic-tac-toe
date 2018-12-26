@@ -16,7 +16,7 @@ module.exports = {
       ref  : 'origin/master',
       repo : 'git@github.com:imdaveead/3d-tic-tac-toe.git',
       path : '/home/dave/programs/ttt',
-      'post-deploy' : 'npm install && pm2 reload ecosystem.js --env staging',
+      'post-deploy': 'npm install && pm2 reload ecosystem.config.js --env staging',
       env: {
         "NODE_ENV": "staging"
       }
