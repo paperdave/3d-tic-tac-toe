@@ -120,7 +120,7 @@ socket.on("back to lobby, guys and gals", () => {
 //#endregion
 
 //#region Before Game / Lobby UI
-// handles updating all components in the lobby state.
+// this handles updating all components in the lobby state.
 function updateLobbyUI() {
     // ignore if not initialized.
     if (!players) return;
@@ -134,6 +134,7 @@ function updateLobbyUI() {
         $(".restarts").hide();
     }
 
+    // woah! this says if we are allowed to start the game ✨
     var canStartGame = true;
 
     // player information
@@ -143,11 +144,11 @@ function updateLobbyUI() {
 
         // get info
         if (index == our_index) {
-            // us
+            // player is us
             isInLobby = true;
             playerName = "You";
         } else {
-            // them
+            // player is them
             const player = players[index > our_index ? index - 1 : index];
 
             isInLobby = !!player;
@@ -156,6 +157,7 @@ function updateLobbyUI() {
                 playerColor = "green";
 
                 if(!player.name) {
+                    // requirement: we need all players with a set name.
                     canStartGame = false;
                 }
             }
@@ -179,6 +181,7 @@ function updateLobbyUI() {
     }
 }
 
+// creates a url tag, the part after the #
 function makeid() {
     var text = "";
     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -191,11 +194,13 @@ function makeid() {
 
 // handle the url stuff
 if (!location.href.includes("#")) {
+    // you didnt have a room name
     room = makeid();
     history.replaceState({}, document.title, "/#" + room);
 } else {
     room = location.href.split("#")[1];
-    if (/[^a-zA-Z0-9]/.exec(room) !== null) {
+    if (/[^a-zA-Z0-9]/.exec(room) !== null || room.length > 8) {
+        // you failed the format, as its only numbers and letters and under 96 chars
         console.warn("Page loaded with an invalid room id, regenerating!");
         console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
 
@@ -467,29 +472,38 @@ function GameCube(x, z, y) {
 function stop3d() {
     if (!started3D) return;
 
+    // disable the bool, this also stops the render loop
     started3D = false;
 
+    // free/reset a ton of stuff
     scene = null;
     raycaster = null;
     camera = null;
     mouse = null;
     renderer = null;
     turn = 0;
+    allow3DClicks = false;
+    gameWinner = -1;
     map = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
     cubes = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
 
+    // remove the canvas
     $("#game-surface").remove();
 
+    // unbind events
     window.off('resize', onWindowResize);
     window.off('mousemove', onTouchMove);
     window.off('mousedown', mouseDown);
     window.off('touchmove', onTouchMove);
     window.off('click', onClick);
 
+    // hide end controls
     $(".end-game-controls").classList.remove("show");
 
+    // remove winner
     $(".top-status-winner").innerHTML = "";
-
+    
+    // hide status
     $(".top-status-turn").hide();
     $(".top-status-winner").hide();
 }

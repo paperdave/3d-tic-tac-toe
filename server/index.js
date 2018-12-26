@@ -245,21 +245,27 @@ function paintCube(socket, room, position) {
 }
 
 io.on("connection", (socket) => {
+    // give them a uuid and a name
     socket.id = uuidv4();
     socket.name = null;
     
+    // store in the unused socket list :)
     sockets[socket.id] = socket;
 
     var room = null;
+
+    // binding ensure to the socket
+    // if we pass a false value to <bool> the socket is kicked for <reason>, logged to console for debug purpose.
     var T = (bool, reason) => ensure(bool, reason, socket);
 
     socket.emit("socket code", socket.id);
 
     socket.on("join room", (newroom) => {
+        // newroom: string(a-z and 0-9, max 8 chars)
         if(0
             || T(room === null, "[join room] Already in a room")
             || T(is(newroom, "string"), "[join room] Invalid Type")
-            || T(newroom.length < 6, "[join room] Invalid Length")
+            || T(newroom.length <= 8, "[join room] Invalid Length")
             || T(/[^a-zA-Z0-9]/.exec(newroom) === null, "[join room] Invalid Chars")
         ) return socket.disconnect();
 
@@ -268,6 +274,7 @@ io.on("connection", (socket) => {
         joinRoom(socket, room);
     });
     socket.on("name entry", (newname) => {
+        // newname: string(length 2-12, specific character)
         if(0
             || T(socket.name === null, "[name entry] Name Already Set")
             || T(is(newname, "string"), "[name entry] Invalid Type")
@@ -293,6 +300,7 @@ io.on("connection", (socket) => {
         delete sockets[socket.id];
     });
     socket.on("paint", (pos) => {
+        // pos: array[number,number,number], numbers must be 0-2
         if (0
             || T(room !== null, "[paint] not in room")
             || T(is(pos, "array"), "[paint] position not array")
@@ -310,12 +318,11 @@ io.on("connection", (socket) => {
         paintCube(socket, room, pos);
     });
     socket.on("restart", () => {
-        // figure out
-        console.log("wanna restart.");
         restartRoom(socket, room)
     });
 });
 
+// route to get an empty room id, just in case.
 app.get("/empty-room", (req,res) => {
     let id;
 
@@ -325,6 +332,9 @@ app.get("/empty-room", (req,res) => {
 
     res.send(id);
 });
+
+///////////////////////////////////////////////////////////////////////////
+// make the servers actually run
 
 if (isNaN(parseInt(process.env.HTTP_PORT)) && isNaN(parseInt(process.env.HTTPS_PORT))) {
     console.log(chalk.red("No HTTP or HTTPS server configured! How else are you gonna play the game!?"));
