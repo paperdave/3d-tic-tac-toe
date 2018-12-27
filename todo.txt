@@ -17,8 +17,8 @@ updated 2018-12-23
 [X] restart a game n stuff
 	- just set state to lobby
 
-[ ] handle discconnect / reconnect DURING a game 
 [X] handle discconnect at END of a game (should be simple)
+[ ] handle discconnect / reconnect DURING a game 
 [ ] if server destroys a running game on accident (both disconnect+reconnect / shutdown) then try to recovver
 	- tell sockets to send a copy of the map and players
 	- if identical then set the room state
@@ -29,7 +29,8 @@ updated 2018-12-23
 [X] if change url to something else go and refresh
 [X] make de mobile users happy
 
-[ ] production builds
+[X] production builds
+[X] MAKE IT BETTER
 
 [ ] polish + fx
 	[ ] shakey rotate on cubes when they are painted

@@ -23,7 +23,7 @@ module.exports = {
         "NODE_ENV": "staging",
         "HTTP_PORT": "3000",
         "HTTPS_PORT": "false",
-        "STATIC_FOLDER": "game",
+        "STATIC_FOLDER": "dist",
       }
     }
   }

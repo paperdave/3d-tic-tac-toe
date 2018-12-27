@@ -2,7 +2,7 @@
 var $ = document.querySelector.bind(document);
 var $$ = (q) => Array.from(document.querySelectorAll(q));
 var $class = (q) => Array.from(document.getElementsByClassName(q));
-var $tagName = (q) => Array.from(document.getElementsByTagName(q));
+// var $tagName = (q) => Array.from(document.getElementsByTagName(q));
 var $id = document.getElementById.bind(document);
 EventTarget.prototype.on = EventTarget.prototype.addEventListener;
 EventTarget.prototype.off = EventTarget.prototype.removeEventListener;

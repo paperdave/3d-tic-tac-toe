@@ -14,6 +14,9 @@ Three dimensional tic tac toe, with up to four players!
 1. creates a dist folder
 1. tweak env to point to `dist` not `game`
 
+## pm2
+theres a `ecosystem.config.js`, which has information to deploy to my local testing server. you can tweak it to use to deploy to production or your own local development server.
+
 ## goals
 - mobile first
 - handle edge cases (wierd reconnection scenerios) (probably failed here)
@@ -22,3 +25,4 @@ Three dimensional tic tac toe, with up to four players!
 - keep simple
 
 ## outcome
+[project is still work in progress, we will add this at the end.]

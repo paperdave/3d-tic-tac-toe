@@ -343,7 +343,7 @@ function updateGameHudUI() {
 }
 
 function handleMouseInput(x, y, z) {
-    var x = x+1, z = z + 1, y = y + 1;
+    x = x + 1, z = z + 1, y = y + 1;
 
     setCubeColor(x, z, y, our_index);
     turn = (turn + 1) % (players.length + 1);
