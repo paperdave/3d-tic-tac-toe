@@ -194,24 +194,44 @@ function makeid() {
     return text;
 }
 
-// handle the url stuff
-if (!location.href.includes("#")) {
-    // you didnt have a room name
-    room = makeid();
-    history.replaceState({}, document.title, "/#" + room);
-} else {
-    room = location.href.split("#")[1];
-    if (/[^a-zA-Z0-9]/.exec(room) !== null || room.length > 8) {
-        // you failed the format, as its only numbers and letters and under 96 chars
-        console.warn("Page loaded with an invalid room id, regenerating!");
-        console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
+//#region Recover State
+if(localStorage["recovery"]) {
+    // validate the recovery status
+    let recovery = JSON.parse(localStorage["recovery"]);
+    id = recovery.id;
+    room = recovery.room;
+    name = recovery.name;
+    players = recovery.players;
+    map = recovery.map;
+    our_index = recovery.index;
 
+    history.replaceState({}, document.title, "/#" + room);
+
+} else {
+
+//#endregion
+
+    // handle the url stuff
+    if (!location.href.includes("#")) {
+        // you didnt have a room name
         room = makeid();
         history.replaceState({}, document.title, "/#" + room);
+    } else {
+        room = location.href.split("#")[1];
+        if (/[^a-zA-Z0-9]/.exec(room) !== null || room.length > 8) {
+            // you failed the format, as its only numbers and letters and under 96 chars
+            console.warn("Page loaded with an invalid room id, regenerating!");
+            console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
+
+            room = makeid();
+            history.replaceState({}, document.title, "/#" + room);
+        }
     }
 }
+
 $("#join-url").innerHTML = location.href;
 $("#join-url-container").appendChild($("#join-url"));
+
 
 // initial state
 setState('name-screen');
@@ -359,6 +379,7 @@ function handleWinning() {
         turn = -10
         gameWinner = winner;
         updateGameHudUI();
+        localStorage.removeItem("recovery")
 
         setTimeout(() => {
             $(".end-game-controls").classList.add("show");
@@ -369,6 +390,9 @@ function handleWinning() {
 function setCubeColor(x, y, z, id) {
     cubes[x][y][z].paint(id);
     map[x][y][z] = id;
+    
+    saveSession();
+
     handleWinning();
 }
 
@@ -496,7 +520,7 @@ function stop3d() {
     window.off('resize', onWindowResize);
     window.off('mousemove', onTouchMove);
     window.off('mousedown', mouseDown);
-    window.off('touchmove', onTouchMove);
+    window.off('touchstart', onTouchStart);
     window.off('click', onClick);
 
     // hide end controls
@@ -511,9 +535,12 @@ function stop3d() {
 }
 function onTouchMove(event) {
     if (event.target.id === "mobile-swipe-to-refresh") return true;
-    drag++;
+    
+    if(isDragging) drag++;
+    else drag = 0;
+
     if(drag > 5) {
-        if(allow3DClicks && isDragging && showHelper) {
+        if (allow3DClicks && isDragging && showHelper) {
             showHelper = false;
             $("#helper").style.opacity = "0";
         }
@@ -579,7 +606,23 @@ function checkIntersection() {
 function mouseDown(event) {
     if (event.target.id === "mobile-swipe-to-refresh") return true;
     isDragging = true;
-    drag = 0
+    drag = 0;
+}
+function onTouchStart(event) {
+    if (event.target.id === "mobile-swipe-to-refresh") return true;
+    isDragging = true;
+    drag = 0;
+}
+// used for restoring from a reload/crash/whatever
+function saveSession() {
+    localStorage["recovery"] = JSON.stringify({
+        id,
+        name,
+        map,
+        room,
+        index: our_index,
+        players
+    });
 }
 function start3d() {
     if (started3D) return;
@@ -603,7 +646,8 @@ function start3d() {
     window.on('resize', onWindowResize, false);
     window.on('mousemove', onTouchMove);
     window.on('mousedown', mouseDown);
-    window.on('touchmove', onTouchMove);
+    surf.on('touchmove', onTouchMove, { passive: false });
+    window.on('touchstart', onTouchStart);
     window.on('click', onClick);
 
     function addCube(x,y,z) {
@@ -656,6 +700,8 @@ function start3d() {
             $("#helper").style.opacity = "1";
         }
     }, 3000);
+
+    saveSession();
 }
 
 $(".restarts").on("click", () => {
@@ -671,3 +717,4 @@ window.on("popstate", () => {
 });
 
 //#endregion
+
