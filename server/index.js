@@ -65,9 +65,18 @@ function ensure(bool, reason, socket) {
 }
 
 function SocketToPlayer(socket) {
-    return {
-        id: socket.id,
-        name: socket.name
+    if(socket.missing) {
+        return {
+            id: socket.id,
+            name: socket.name,
+            missing: true,
+        }
+    } else {
+        return {
+            id: socket.id,
+            name: socket.name,
+            missing: false,
+        }
     }
 }
 
@@ -131,33 +140,78 @@ function leaveRoom(socket, room) {
     // ignore if room is gone
     if(!(room in rooms)) return;
 
-    // remove
-    rooms[room].players = rooms[room].players.filter(x => x.id !== socket.id);
-    
-    // notify
-    rooms[room].players.forEach((sock, index) => {
-        if (sock === socket) { return; };
-
-        sock.emit("player leave", socket.id, index);
-    });
-    
-    // if empty destroy room
-    if(rooms[room].players.length === 0) {
-        delete rooms[room];
-        console.log("delete room " + room);
+    // if in a game, we need to do some other logic
+    if (rooms[room].isStarted) {
+        console.log("putting socket " + socket.id.substring(0,6) + "... into 'missing' mode.");
+        rooms[room].players = rooms[room].players.map(x => {
+            if(x.id === socket.id) {
+                return { missing: true, name: socket.name, id: socket.id, secret: socket.secret };
+            } else {
+                return x;
+            }
+        });
+        
     } else {
-        // dont reassign leader if non lobby
-        if(rooms[room].isStarted) {
-            return;
-        }
+        // lobby
 
-        // reassign leader
-        if(socket.id === rooms[room].leader.id) {
-            rooms[room].leader = rooms[room].players[0];
-            rooms[room].leader.emit("youre leader");
+        // remove
+        rooms[room].players = rooms[room].players.filter(x => x.id !== socket.id);
+        
+        // notify
+        rooms[room].players.forEach((sock, index) => {
+            if (sock === socket) { return; };
+    
+            sock.emit("player leave", socket.id, index);
+        });
+        
+        // if empty destroy room
+        if(rooms[room].players.length === 0) {
+            delete rooms[room];
+        } else {
+            // dont reassign leader if non lobby
+            if(rooms[room].isStarted) {
+                return;
+            }
+    
+            // reassign leader
+            if(socket.id === rooms[room].leader.id) {
+                rooms[room].leader = rooms[room].players[0];
+                rooms[room].leader.emit("youre leader");
+            }
         }
     }
+
 }
+function attemptRejoinRoom(socket, recoverData) {
+    // ignore if room is gone
+    if (!(recoverData.room in rooms)) {
+        socket.emit("recover failed");
+        return console.log("[recover] no room exist");
+    }
+
+    // if room lobby, we tell them so
+    if (!rooms[recoverData.room].isStarted) {
+        socket.emit("recover failed");
+        return console.log("[recover] room is in lobby state");
+    }
+
+    // find the player in the room
+    var index = -1;
+
+    rooms[recoverData.room].players.forEach((player, i) => {
+        if (player.missing && player.id === recoverData.id && player.secret === recoverData.secret) {
+            index = i;
+        };
+    });
+
+    if(index === -1) {
+        socket.emit("recover failed");
+        return console.log("[recover] cannot find a match");
+    }
+
+    return true;
+}
+
 
 function startRoom(socket, room) {
     // ignore if room is gone
@@ -235,7 +289,6 @@ function paintCube(socket, room, position) {
     // win detec
     const winner = doTheWinDetect(rooms[room].map);
     if (winner !== null) {
-        console.log("victory rolaye (player " + (winner+1) + ")");
         rooms[room].isEnded = true;
     }
 
@@ -249,6 +302,7 @@ function paintCube(socket, room, position) {
 io.on("connection", (socket) => {
     // give them a uuid and a name
     socket.id = uuidv4();
+    socket.secret = uuidv4();
     socket.name = null;
     
     // store in the unused socket list :)
@@ -260,7 +314,7 @@ io.on("connection", (socket) => {
     // if we pass a false value to <bool> the socket is kicked for <reason>, logged to console for debug purpose.
     var T = (bool, reason) => ensure(bool, reason, socket);
 
-    socket.emit("socket code", socket.id);
+    socket.emit("socket code", socket.id, socket.secret);
 
     socket.on("join room", (newroom) => {
         // newroom: string(a-z and 0-9, max 8 chars)
@@ -320,7 +374,38 @@ io.on("connection", (socket) => {
         paintCube(socket, room, pos);
     });
     socket.on("restart", () => {
-        restartRoom(socket, room)
+        restartRoom(socket, room);
+    });
+    socket.on("recover me", (recoverPayload) => {
+        if(0
+            || T(typeof recoverPayload === "object","[recover] not an object")
+            || T(!Array.isArray(recoverPayload),"[recover] not an object")
+            || T(recoverPayload !== null,"[recover] not an object")
+            || T(typeof recoverPayload.id === "string", "[recover] bad type: recoverData.id")
+            || T(typeof recoverPayload.room === "string", "[recover] bad type: recoverData.room")
+            || T(typeof recoverPayload.name === "string", "[recover] bad type: recoverData.name")
+            || T(Array.isArray(recoverPayload.players), "[recover] bad type: recoverData.players")
+            || T(!recoverPayload.players.find(player => {
+                // return a bad only
+                if(typeof player !== "object") return true;
+                if(player === null) return true;
+                if(Array.isArray(player)) return true;
+                if(typeof player.id !== "string") return true;
+                if(typeof player.name !== "string") return true;
+
+                return false;
+            }), "[recover] bad type: recoverData.players")
+            || T(Array.isArray(recoverPayload.map), "[recover] bad type: recoverData.map")
+            || T(typeof recoverPayload.index === "number", "[recover] bad type: recoverData.index")
+        ) return;
+        
+                    
+        if (attemptRejoinRoom(socket, recoverPayload)) {
+            socket.id = recoverPayload.id;
+            socket.name = recoverPayload.name;
+            room = recoverPayload.name;
+        }
+
     });
 });
 

@@ -19,52 +19,51 @@ const files = [
     "./game/game.js"
 ]
 
-if (minify) {
-    let code = {}
-    
-    files.forEach(file => {
-        code[file.replace("./game/", "./")] = fs.readFileSync(file).toString();
-    });
+let code = {}
 
-    let result = UglifyJS.minify(code, {
-        warnings: true,
-    });
-    
-    if (result.error) {
-        console.log(chalk.red("Minification Error!"))
-        console.log(chalk.red(result.error.message));
-        console.log("At " + result.error.filename + result.error.line + "," + result.error.col);
-    } else {
-        if(result.warnings) {
-            result.warnings.forEach(warning => {
-                if (warning.includes("./node_modules/")) return;
-                if (warning.includes("./lib")) return;
+files.forEach(file => {
+    code[file.replace("./game/", "./")] = fs.readFileSync(file).toString();
+});
 
-                console.warn(chalk.yellow("[WARN] " + warning));
-            });
-        }
-    
-        js_playload = result.code;
-    }
+let result = UglifyJS.minify(code, {
+    warnings: true,
+});
+
+if (result.error) {
+    console.log(chalk.red("Minification Error!"))
+    console.log(chalk.red(result.error.message));
+    console.log("At " + result.error.filename + result.error.line + "," + result.error.col);
 } else {
-    // un minified
-    js_playload = "(function() {";
+    if(result.warnings) {
+        result.warnings.forEach(warning => {
+            if (warning.includes("./node_modules/")) return;
+            if (warning.includes("./lib")) return;
 
-    files.forEach(file => {
-        js_playload += fs.readFileSync(file).toString().split("\n").map(x => "\t" + x).join("\n") + "\n";
-    });
+            console.warn(chalk.yellow("[WARN] " + warning));
+        });
+    }
 
-    js_playload += "})();";
-
+    js_playload = result.code;
 }
 
 fs.writeFileSync("./dist/puzzle-game.js", js_playload);
 
 // index.html
 let indexContent = fs.readFileSync("./game/index.html").toString();
+let css = indexContent.replace(/((.|\n|\r)*)<style>((.|\n|\r)*)\<\/style\>((.|\n|\r)*)/g,"$3");
+indexContent = indexContent.replace(/\<style>((.|\n|\r)*)\<\/style\>/g,"!!!replace with processed css!!!");
 indexContent = indexContent.replace(/\<\!-- START SCRIPTS --\>((.|\n|\r)*)\<\!-- END SCRIPTS --\>/g,"<script src='puzzle-game.js'></script>");
 
-if (minify) {
+var autoprefixer = require('autoprefixer');
+var postcss = require('postcss');
+console.log(css);
+postcss([autoprefixer]).process(css, {from: undefined}).then(function (result) {
+    result.warnings().forEach(function (warn) {
+        console.warn(warn.toString());
+    });
+    
+    indexContent = indexContent.replace("!!!replace with processed css!!!", "<style>" + result.css + "</style>");
+
     // minify
     indexContent = minifyHTML(indexContent, {
         caseSensitive: true,
@@ -89,6 +88,7 @@ if (minify) {
         removeTagWhitespace: true,
         useShortDoctype: true
     });
-}
 
-fs.writeFileSync("./dist/index.html", indexContent);
+    fs.writeFileSync("./dist/index.html", indexContent);
+});
+

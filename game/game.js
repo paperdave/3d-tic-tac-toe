@@ -4,6 +4,7 @@ var room = null;
 var players = null;
 var isLeader = false;
 var id = null;
+var secret = null;
 var our_index = 0;
 var DisconnectedPrevState = null;
 var map = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
@@ -22,24 +23,40 @@ var gameWinner = -1;
 var drag = 900;
 var isDragging = false;
 var showHelper = true;
+var recovering = false;
 
 //#region Socket Handlers 
-socket.on("socket code", (code) => {
+socket.on("socket code", (code, secretCode) => {
     id = code;
+    secret = secretCode;
 
-    socket.emit("join room", room);
+    if (recovering) {
 
-    if (hasEnteredName) {
-        socket.emit("name entry", name);
+        let recovery = JSON.parse(localStorage["recovery"]);
+        
+        socket.emit("recover me", recovery);
+
+    } else if (started3D) {
+
+
+        
+    } else {
+        
+        socket.emit("join room", room);
+    
+        if (hasEnteredName) {
+            socket.emit("name entry", name);
+        }
+    
+        // if disconnected, go back to its state.
+        if (DisconnectedPrevState) {
+    
+            setState(DisconnectedPrevState);
+            DisconnectedPrevState = null;
+    
+        }
     }
 
-    // if disconnected, go back to its state.
-    if (DisconnectedPrevState) {
-
-        setState(DisconnectedPrevState);
-        DisconnectedPrevState = null;
-
-    }
 });
 // current room information, and our index.
 socket.on("join info", (index, list) => {
@@ -119,6 +136,25 @@ socket.on("back to lobby, guys and gals", () => {
     setState("lobby");
     stop3d();
 });
+socket.on("recover success", (game) => {
+    console.log("RECOVER SUCCESS: ", game);
+});
+socket.on("recover failed", () => {
+    console.log("RECOVER FAILED");
+    recovering = false;
+
+    localStorage.clear();
+    handleUrlStuffs();
+
+    socket.emit("join room", room);
+
+    // if disconnected, go back to its state.
+    if (DisconnectedPrevState) {
+        setState(DisconnectedPrevState);
+        DisconnectedPrevState = null;
+    }
+});
+
 //#endregion
 
 //#region Before Game / Lobby UI
@@ -204,13 +240,18 @@ if(localStorage["recovery"]) {
     players = recovery.players;
     map = recovery.map;
     our_index = recovery.index;
+    secret = recovery.secret;
 
     history.replaceState({}, document.title, "/#" + room);
-
+    
+    recovering = true;
 } else {
+    handleUrlStuffs();
+}
 
 //#endregion
 
+function handleUrlStuffs() {
     // handle the url stuff
     if (!location.href.includes("#")) {
         // you didnt have a room name
@@ -621,7 +662,8 @@ function saveSession() {
         map,
         room,
         index: our_index,
-        players
+        players,
+        secret
     });
 }
 function start3d() {
