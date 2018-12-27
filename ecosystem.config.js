@@ -6,6 +6,8 @@ module.exports = {
 
     instances: 1,
     autorestart: true,
+
+    cwd: __dirname
   }],
 
   deploy : {
@@ -16,9 +18,12 @@ module.exports = {
       ref  : 'origin/master',
       repo : 'git@github.com:imdaveead/3d-tic-tac-toe.git',
       path : '/home/dave/programs/ttt',
-      'post-deploy': 'npm install && pm2 reload ecosystem.config.js --env staging',
+      'post-deploy': 'npm install -D && node ./build.js && pm2 reload ecosystem.config.js --env staging',
       env: {
-        "NODE_ENV": "staging"
+        "NODE_ENV": "staging",
+        "HTTP_PORT": "3000",
+        "HTTPS_PORT": "false",
+        "STATIC_FOLDER": "game",
       }
     }
   }
