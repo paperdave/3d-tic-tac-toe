@@ -51,17 +51,15 @@ socket.on("socket code", (code, secretCode) => {
     id = code;
     secret = secretCode;
 
-    if (recovering) {
+    if (recovering || started3D) {
+
+        setState("recover");
 
         let recovery = JSON.parse(sessionStorage["recovery"]);
         
         setTimeout(() => {
             socket.emit("recover me", recovery);
         }, 250);
-
-    } else if (started3D) {
-
-
         
     } else {
         

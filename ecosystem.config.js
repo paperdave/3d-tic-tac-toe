@@ -14,7 +14,7 @@ module.exports = {
     staging : {
       key: '/c/Users/Dave/.ssh/id_rsa',
       user : 'dave',
-      host : 'dev',
+      host : 'opti',
       ref  : 'origin/master',
       repo : 'git@github.com:imdaveead/3d-tic-tac-toe.git',
       path : '/home/dave/programs/ttt',
@@ -22,6 +22,23 @@ module.exports = {
       env: {
         "NODE_ENV": "staging",
         "HTTP_PORT": "3000",
+        "HTTPS_PORT": "false",
+        "STATIC_FOLDER": "dist",
+      }
+    }
+  },
+  production: {
+    staging : {
+      key: '/c/Users/Dave/.ssh/id_rsa',
+      user : 'dave',
+      host : 'club',
+      ref  : 'origin/master',
+      repo : 'git@github.com:imdaveead/3d-tic-tac-toe.git',
+      path : '/home/dave/programs/ttt',
+      'post-deploy': 'npm install -D && node ./build.js && pm2 reload ecosystem.config.js --env production',
+      env: {
+        "NODE_ENV": "production",
+        "HTTP_PORT": "15000",
         "HTTPS_PORT": "false",
         "STATIC_FOLDER": "dist",
       }
