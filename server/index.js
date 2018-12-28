@@ -59,7 +59,15 @@ function is(input, type) {
 function ensure(bool, reason, socket) {
     if(!bool) {
         console.log("Kicked: " + chalk.red(reason || "<no reson set>"));
-        socket.disconnect();
+
+        if(reason.startsWith("[recover]")) {
+            socket.emit("recover failed");
+            setTimeout(() => {
+                socket.disconnect();
+            }, 500);
+        } else {
+            socket.disconnect();
+        }
     }
     return !bool;
 }
@@ -70,12 +78,14 @@ function SocketToPlayer(socket) {
             id: socket.id,
             name: socket.name,
             missing: true,
+            // secret: socket.secret,
         }
     } else {
         return {
             id: socket.id,
             name: socket.name,
             missing: false,
+            // secret: socket.secret
         }
     }
 }
@@ -119,7 +129,8 @@ function joinRoom(socket, room) {
 
     // notify
     rooms[room].players.forEach(sock => {
-        sock.emit("player join", SocketToPlayer(socket));
+        if (!sock.missing)
+            sock.emit("player join", SocketToPlayer(socket));
     });
 
     // send player list
@@ -133,7 +144,8 @@ function notifyRoomOfName(socket, room, name) {
     // notify
     rooms[room].players.forEach(sock => {
         if(sock === socket) { return; };
-        sock.emit("player name set", socket.id, name);
+        if (!sock.missing)
+            sock.emit("player name set", socket.id, name);
     });
 }
 function leaveRoom(socket, room) {
@@ -142,9 +154,9 @@ function leaveRoom(socket, room) {
 
     // if in a game, we need to do some other logic
     if (rooms[room].isStarted) {
-        console.log("putting socket " + socket.id.substring(0,6) + "... into 'missing' mode.");
         rooms[room].players = rooms[room].players.map(x => {
             if(x.id === socket.id) {
+                console.log("putting socket " + socket.id.substring(0,6) + "... into 'missing' mode.");
                 return { missing: true, name: socket.name, id: socket.id, secret: socket.secret };
             } else {
                 return x;
@@ -160,8 +172,8 @@ function leaveRoom(socket, room) {
         // notify
         rooms[room].players.forEach((sock, index) => {
             if (sock === socket) { return; };
-    
-            sock.emit("player leave", socket.id, index);
+            if(!sock.missing)
+                sock.emit("player leave", socket.id, index);
         });
         
         // if empty destroy room
@@ -194,9 +206,16 @@ function attemptRejoinRoom(socket, recoverData) {
         socket.emit("recover failed");
         return console.log("[recover] room is in lobby state");
     }
+    // if room ended, we tell them so
+    if (rooms[recoverData.room].isEnded) {
+        socket.emit("recover failed");
+        return console.log("[recover] room is ended state");
+    }
 
     // find the player in the room
     var index = -1;
+
+    console.log(rooms[recoverData.room].players.map(SocketToPlayer));
 
     rooms[recoverData.room].players.forEach((player, i) => {
         if (player.missing && player.id === recoverData.id && player.secret === recoverData.secret) {
@@ -208,6 +227,18 @@ function attemptRejoinRoom(socket, recoverData) {
         socket.emit("recover failed");
         return console.log("[recover] cannot find a match");
     }
+
+    // found a match, add magic
+    rooms[recoverData.room].players[index] = socket;
+
+    socket.emit("recover success", {
+        turn: rooms[recoverData.room].turn,
+        map: rooms[recoverData.room].map,
+        players: rooms[recoverData.room].players.map(SocketToPlayer).filter(x => x.id !== socket.id),
+        index,
+        id: recoverData.id,
+        secret: recoverData.secret
+    });
 
     return true;
 }
@@ -228,7 +259,8 @@ function startRoom(socket, room) {
 
     rooms[room].isStarted = true;
     rooms[room].players.forEach(sock => {
-        sock.emit("game is about to start");
+        if(!sock.missing)
+            sock.emit("game is about to start");
     });
 
     rooms[room].map = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
@@ -247,7 +279,8 @@ function restartRoom(socket, room) {
 
     rooms[room].isStarted = false;
     rooms[room].players.forEach(sock => {
-        sock.emit("back to lobby, guys and gals");
+        if(!sock.missing)
+            sock.emit("back to lobby, guys and gals");
     });
 
     delete rooms[room].map
@@ -295,7 +328,8 @@ function paintCube(socket, room, position) {
     // notify
     rooms[room].players.forEach(sock => {
         if (sock === socket) { return; };
-        sock.emit("paint", position, index);
+        if (!sock.missing)
+            sock.emit("paint", position, index);
     });
 }
 
@@ -403,7 +437,8 @@ io.on("connection", (socket) => {
         if (attemptRejoinRoom(socket, recoverPayload)) {
             socket.id = recoverPayload.id;
             socket.name = recoverPayload.name;
-            room = recoverPayload.name;
+            socket.secret = recoverPayload.secret;
+            room = recoverPayload.room;
         }
 
     });

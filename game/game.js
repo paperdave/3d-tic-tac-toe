@@ -25,6 +25,27 @@ var isDragging = false;
 var showHelper = true;
 var recovering = false;
 
+var _realsocketemit = socket.emit;
+socket.emit = function(ev, ...args) {
+    if (arguments[0] !== "ping" && arguments[0] !== "pong") {
+        if (Array.isArray(args)) {
+            console.log("EMIT: `" + ev + "`",  ...args);
+        } else {
+            console.log("EMIT: `" + ev + "`");
+        }
+    }
+    
+    _realsocketemit.bind(this, ...arguments)();
+}
+var _realsocketon = socket.on;
+socket.on = function(event, callback) {
+    _realsocketon.bind(this)(event,function(){
+        console.log("MESSAGE: `" + event + "`", ...arguments)
+        callback(...arguments);
+
+    });
+}
+
 //#region Socket Handlers 
 socket.on("socket code", (code, secretCode) => {
     id = code;
@@ -32,9 +53,11 @@ socket.on("socket code", (code, secretCode) => {
 
     if (recovering) {
 
-        let recovery = JSON.parse(localStorage["recovery"]);
+        let recovery = JSON.parse(sessionStorage["recovery"]);
         
-        socket.emit("recover me", recovery);
+        setTimeout(() => {
+            socket.emit("recover me", recovery);
+        }, 250);
 
     } else if (started3D) {
 
@@ -137,14 +160,31 @@ socket.on("back to lobby, guys and gals", () => {
     stop3d();
 });
 socket.on("recover success", (game) => {
-    console.log("RECOVER SUCCESS: ", game);
+    console.log("RECOVER SUCCESS");
+    
+    players = game.players;
+    turn = game.turn;
+    our_index = game.index;
+    id = game.id;
+    secret = game.secret;
+
+    name = JSON.parse(sessionStorage.recovery).name;
+
+    start3d();
+
+    for (let x = 0; x < 3; x++) {
+        for (let y = 0; y < 3; y++) {
+            for (let z = 0; z < 3; z++) {
+                setCubeColor(x, z, y, game.map[x][y][z], "force")
+            }
+        }
+    }
 });
 socket.on("recover failed", () => {
     console.log("RECOVER FAILED");
     recovering = false;
 
-    localStorage.clear();
-    handleUrlStuffs();
+    sessionStorage.clear();
 
     socket.emit("join room", room);
 
@@ -231,51 +271,47 @@ function makeid() {
 }
 
 //#region Recover State
-if(localStorage["recovery"]) {
-    // validate the recovery status
-    let recovery = JSON.parse(localStorage["recovery"]);
-    id = recovery.id;
-    room = recovery.room;
-    name = recovery.name;
-    players = recovery.players;
-    map = recovery.map;
-    our_index = recovery.index;
-    secret = recovery.secret;
 
+// handle the url stuff
+if (!location.href.includes("#")) {
+    // you didnt have a room name
+    room = makeid();
     history.replaceState({}, document.title, "/#" + room);
-    
-    recovering = true;
 } else {
-    handleUrlStuffs();
+    room = location.href.split("#")[1];
+    if (/[^a-zA-Z0-9]/.exec(room) !== null || room.length > 8) {
+        // you failed the format, as its only numbers and letters and under 96 chars
+        console.warn("Page loaded with an invalid room id, regenerating!");
+        console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
+
+        room = makeid();
+        history.replaceState({}, document.title, "/#" + room);
+    }
+}
+
+if (sessionStorage["recovery"]) {
+    // validate the recovery status
+    let recovery = JSON.parse(sessionStorage["recovery"]);
+    
+    if (room === recovery.room) {
+        recovering = true;
+    }
 }
 
 //#endregion
 
-function handleUrlStuffs() {
-    // handle the url stuff
-    if (!location.href.includes("#")) {
-        // you didnt have a room name
-        room = makeid();
-        history.replaceState({}, document.title, "/#" + room);
-    } else {
-        room = location.href.split("#")[1];
-        if (/[^a-zA-Z0-9]/.exec(room) !== null || room.length > 8) {
-            // you failed the format, as its only numbers and letters and under 96 chars
-            console.warn("Page loaded with an invalid room id, regenerating!");
-            console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
-
-            room = makeid();
-            history.replaceState({}, document.title, "/#" + room);
-        }
-    }
-}
 
 $("#join-url").innerHTML = location.href;
 $("#join-url-container").appendChild($("#join-url"));
 
 
 // initial state
-setState('name-screen');
+if (recovering) {
+    setState('recover');
+
+} else {
+    setState('name-screen');
+}
 
 function namevalid() {
     let error = $(".name-entry-error");
@@ -420,7 +456,7 @@ function handleWinning() {
         turn = -10
         gameWinner = winner;
         updateGameHudUI();
-        localStorage.removeItem("recovery")
+        sessionStorage.removeItem("recovery")
 
         setTimeout(() => {
             $(".end-game-controls").classList.add("show");
@@ -428,8 +464,8 @@ function handleWinning() {
     }
 }
 
-function setCubeColor(x, y, z, id) {
-    cubes[x][y][z].paint(id);
+function setCubeColor(x, y, z, id, force = false) {
+    cubes[x][y][z].paint(id, force);
     map[x][y][z] = id;
     
     saveSession();
@@ -486,12 +522,13 @@ function GameCube(x, z, y) {
         group.scale.setScalar(scale );
     }
     self.paintedColor = -1;
-    self.paint = function(id) {
+    self.paint = function(id, force) {
         var hoverFlag = hover;
         if (hoverFlag) {
             self.hoverOff();
         }
 
+        if (id === -1) color = { r: 1, g: 1, b:1 };
         if (id === 0) color = { r: 255 / 255, g: 66  / 255, b: 66  / 255 };
         if (id === 1) color = { r: 66  / 255, g: 255 / 255, b: 113 / 255 };
         if (id === 2) color = { r: 66  / 255, g: 69  / 255, b: 255 / 255 };
@@ -499,7 +536,7 @@ function GameCube(x, z, y) {
 
         mesh_mat.color = color;
 
-        painted = true;
+        painted = id !== -1;
         self.paintedColor = id;
 
         scale = 1.25;
@@ -656,7 +693,7 @@ function onTouchStart(event) {
 }
 // used for restoring from a reload/crash/whatever
 function saveSession() {
-    localStorage["recovery"] = JSON.stringify({
+    sessionStorage["recovery"] = JSON.stringify({
         id,
         name,
         map,

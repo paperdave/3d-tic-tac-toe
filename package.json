@@ -1,11 +1,15 @@
 {
-  "name": "ttc",
+  "name": "ttt-3d",
   "version": "1.0.0",
-  "description": "",
+  "description": "three dimensional tic tac toe... https://url-coming-soon.davecode.me",
   "main": "server/index.js",
-  "scripts": {},
   "author": "Dave Caruso",
   "license": "MIT",
+  "scripts": {
+    "line-count": "cloc server game/game.js game/index.html game/win-detect.js game/lib.js",
+    "build": "node build",
+    "start": "node ."
+  },
   "dependencies": {
     "chalk": "^2.4.1",
     "dotenv": "^6.1.0",
@@ -18,7 +22,6 @@
     "fs-extra": "^7.0.1",
     "html-minifier": "^3.5.21",
     "postcss": "^7.0.7",
-    "uglify-es": "^3.3.9",
-    "uglify-js": "^3.4.9"
+    "uglify-es": "^3.3.9"
   }
 }
