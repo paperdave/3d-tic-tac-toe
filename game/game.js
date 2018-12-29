@@ -332,10 +332,15 @@ joinurl.on("click", function handler() {
 if (room === "help+info") {
     setState('help');
     socket.disconnect();
-} else if (recovering) {
-    setState('recover');
 } else {
-    setState('name-screen');
+    console.log("a")
+    $(".if-previous-room").show();
+
+    if (recovering) {
+        setState('recover');
+    } else {
+        setState('name-screen');   
+    }
 }
 
 function namevalid() {
@@ -347,7 +352,7 @@ function namevalid() {
         error.innerHTML = "You cannot have special characters in your name.";
     }
     else {
-        error.innerHTML = "";
+        error.innerHTML = "&nbsp;";
         return true;
     }
     return false;
@@ -813,7 +818,7 @@ $(".restarts").on("click", () => {
 });
 
 $(".previous-room").on("click", () => {
-    
+    location.href = "/#" + room;
 });
 
 //#endregion
