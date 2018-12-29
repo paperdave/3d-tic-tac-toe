@@ -27,10 +27,8 @@
             width: 100vw;
             font-weight: bold;
             text-align: center;
-            line-height: 25vh;
             color: white;
             font-family: Roboto, sans-serif;
-            font-size: 3em;
         }
         p {
             text-align: center;
@@ -90,8 +88,6 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
             width: min-content;
             /* margin: 1.5em auto; */
-            user-select: none;
-
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #join-url-container:hover #join-url {
@@ -100,8 +96,6 @@
 
             transform: translateY(-3.5px);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-
-            user-select: all;
         }
         #join-url-container {
             /* padding: 1.25em 1em; */
@@ -275,6 +269,13 @@
         }
 
         .HIDDENJS{display:none;}
+
+        a {
+            color:white;
+        }
+        a:active {
+            color:#EEE;
+        }
     </style>
 </head>
 <body>
@@ -322,7 +323,9 @@
     
     <div style="display:flex;flex-direction:column;min-height:100%;">
         <div style="flex-grow:1;-webkit-tap-highlight-color:rgba(0,0,0,0)" id="state-surface">
-            <header class="hide:game">3D Tic Tac Toe</header>
+            <header class="hide:game">
+                <img src="/res/title.png" alt="3D Tic Tac Toe (logo)" style="width:100%;max-width:500px;">
+            </header>
             
             <section class="HIDDENJS enable-your-javascript show:no-js">
                 <p>Please Enable JavaScript</p>
@@ -338,6 +341,22 @@
                 </p>
             </section>
             
+            <section class="HIDDENJS show:help">
+                <p style="color:purple;font-weight:bold;">TODO: information about the game</p>
+                <p>take turns painting the cube</p>
+                <p>can't paint over a cube</p>
+                <p>goal: match a three in a row in any direction</p>
+                <p>have fun, press button to make a room.</p>
+                <p>
+                    <button class="new-room">Join Empty Room</button>
+                    <div class="if-previous-room HIDDENJS">
+                        &nbsp;
+                        <button class="previous-room">Go Back to Previous Room</button>
+                    </div>
+                </p>
+                <p>davecode.me</p>
+            </section>
+
             <section class="HIDDENJS show:name-screen">
                 <p>Enter your Name</p>
                 <form submit="handleNameEnter">
@@ -350,6 +369,9 @@
                         
                     </p>
                 </form>
+                <p>
+                    <a href="#help+info">what?</a>
+                </p>
             </section>
             
             <section class="HIDDENJS show:too-big">
@@ -431,7 +453,8 @@
     <script src="./lib/three.js"></script>
     <script src="./lib/OrbitControlsSmooth.js"></script>
     
-    <script src="./lib.js"></script>
+    <script src="./lib/lib.js"></script>
+    <script src="./lib/copy.js"></script>
     
     <script src="./win-detect.js"></script>
     <script src="./game.js"></script>

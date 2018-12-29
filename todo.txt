@@ -18,7 +18,8 @@ updated 2018-12-23
 	- just set state to lobby
 
 [X] handle discconnect at END of a game (should be simple)
-[ ] handle discconnect / reconnect DURING a game 
+[X] handle discconnect / reconnect DURING a game 
+[ ] what if its not a ctrl + r
 [ ] if server destroys a running game on accident (both disconnect+reconnect / shutdown) then try to recovver
 	- tell sockets to send a copy of the map and players
 	- if identical then set the room state
@@ -33,6 +34,6 @@ updated 2018-12-23
 [X] MAKE IT BETTER
 
 [ ] polish + fx
-	[ ] shakey rotate on cubes when they are painted
+	[x] shakey rotate on cubes when they are painted
 	[ ] particles in the background maybe
 	[ ] fade/animate between states n stuff

@@ -1,5 +1,4 @@
 var name = "";
-var socket = io();
 var room = null;
 var players = null;
 var isLeader = false;
@@ -24,32 +23,35 @@ var drag = 900;
 var isDragging = false;
 var showHelper = true;
 var recovering = false;
+var socket = io();
 
-var _realsocketemit = socket.emit;
-socket.emit = function(ev, ...args) {
-    if (arguments[0] !== "ping" && arguments[0] !== "pong") {
-        if (Array.isArray(args)) {
-            console.log("EMIT: `" + ev + "`",  ...args);
-        } else {
-            console.log("EMIT: `" + ev + "`");
-        }
-    }
+// var _realsocketemit = socket.emit;
+// socket.emit = function(ev, ...args) {
+//     if (arguments[0] !== "ping" && arguments[0] !== "pong") {
+//         if (Array.isArray(args)) {
+//             console.log("EMIT: `" + ev + "`",  ...args);
+//         } else {
+//             console.log("EMIT: `" + ev + "`");
+//         }
+//     }
     
-    _realsocketemit.bind(this, ...arguments)();
-}
-var _realsocketon = socket.on;
-socket.on = function(event, callback) {
-    _realsocketon.bind(this)(event,function(){
-        console.log("MESSAGE: `" + event + "`", ...arguments)
-        callback(...arguments);
+//     _realsocketemit.bind(this, ...arguments)();
+// }
+// var _realsocketon = socket.on;
+// socket.on = function(event, callback) {
+//     _realsocketon.bind(this)(event,function(){
+//         console.log("MESSAGE: `" + event + "`", ...arguments)
+//         callback(...arguments);
 
-    });
-}
+//     });
+// }
 
 //#region Socket Handlers 
 socket.on("socket code", (code, secretCode) => {
     id = code;
     secret = secretCode;
+
+    if (room === "help+info") return;
 
     if (recovering || started3D) {
 
@@ -125,6 +127,7 @@ socket.on("disconnect", () => {
     // to big will disconnect us, so ignore
     if (state == "too-big") return;
     if (state == "game-started-without-us") return;
+    if (state == "help") return;
     if (gameWinner !== -1) return;
     
     DisconnectedPrevState = state;
@@ -183,6 +186,8 @@ socket.on("recover failed", () => {
     recovering = false;
 
     sessionStorage.clear();
+
+    setState("name-screen");
 
     socket.emit("join room", room);
 
@@ -268,7 +273,6 @@ function makeid() {
     return text;
 }
 
-//#region Recover State
 
 // handle the url stuff
 if (!location.href.includes("#")) {
@@ -277,13 +281,15 @@ if (!location.href.includes("#")) {
     history.replaceState({}, document.title, "/#" + room);
 } else {
     room = location.href.split("#")[1];
-    if (/[^a-zA-Z0-9]/.exec(room) !== null || room.length > 8) {
-        // you failed the format, as its only numbers and letters and under 96 chars
-        console.warn("Page loaded with an invalid room id, regenerating!");
-        console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
-
-        room = makeid();
-        history.replaceState({}, document.title, "/#" + room);
+    if(room !== "help+info") {
+        if (/[^a-zA-Z0-9]/.exec(room) !== null || room.length > 8) {
+            // you failed the format, as its only numbers and letters and under 96 chars
+            console.warn("Page loaded with an invalid room id, regenerating!");
+            console.warn("The charset allowed in room ids is [a-zA-Z0-9]");
+    
+            room = makeid();
+            history.replaceState({}, document.title, "/#" + room);
+        }
     }
 }
 
@@ -296,17 +302,38 @@ if (sessionStorage["recovery"]) {
     }
 }
 
-//#endregion
-
-
-$("#join-url").innerHTML = location.href;
 $("#join-url-container").appendChild($("#join-url"));
+var joinurl = $("#join-url");
+var copytextshown = false;
+joinurl.innerHTML = location.href;
+joinurl.on("click", function handler() {
+    if(copytextshown) return;
+    copytextshown = true;
+    joinurl.style.width = joinurl.clientWidth + "px";
 
+    copyTextToClipboard(location.href);
+    
+    joinurl.innerHTML = "Copied!";
+    
+    setTimeout(() => {
+        joinurl.style.color = "transparent";
+        setTimeout(() => {
+            joinurl.style.color = "";
+            joinurl.innerHTML = location.href;
+            copytextshown = false; 
+            setTimeout(() => {
+                copytextshown = false; 
+            }, 200);
+        }, 175);
+    }, 1500);
+});
 
 // initial state
-if (recovering) {
+if (room === "help+info") {
+    setState('help');
+    socket.disconnect();
+} else if (recovering) {
     setState('recover');
-
 } else {
     setState('name-screen');
 }
@@ -785,12 +812,22 @@ $(".restarts").on("click", () => {
     socket.emit("restart");
 });
 
+$(".previous-room").on("click", () => {
+    
+});
+
 //#endregion
 
-//#region
+//#region states
 
 window.on("popstate", () => {
-    location.reload();
+    var room = location.href.split("#")[1];
+    if(room === "help+info") {
+        setState("help");
+        socket.disconnect();
+    } else {
+        location.reload();
+    }
 });
 
 //#endregion

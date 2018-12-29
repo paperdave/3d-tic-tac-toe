@@ -12,7 +12,8 @@ fs.mkdirsSync("./dist");
 let js_playload;
 const files = [
     "./node_modules/socket.io-client/dist/socket.io.js",
-    "./game/lib.js",
+    "./game/lib/lib.js",
+    "./game/lib/copy.js",
     "./game/lib/three.js",
     "./game/lib/OrbitControlsSmooth.js",
     "./game/win-detect.js",
@@ -33,11 +34,12 @@ if (result.error) {
     console.log(chalk.red("Minification Error!"))
     console.log(chalk.red(result.error.message));
     console.log("At " + result.error.filename + result.error.line + "," + result.error.col);
+    return;
 } else {
     if(result.warnings) {
         result.warnings.forEach(warning => {
             if (warning.includes("./node_modules/")) return;
-            if (warning.includes("./lib")) return;
+            // if (warning.includes("./lib")) return;
 
             console.warn(chalk.yellow("[WARN] " + warning));
         });
@@ -56,7 +58,6 @@ indexContent = indexContent.replace(/\<\!-- START SCRIPTS --\>((.|\n|\r)*)\<\!--
 
 var autoprefixer = require('autoprefixer');
 var postcss = require('postcss');
-console.log(css);
 postcss([autoprefixer]).process(css, {from: undefined}).then(function (result) {
     result.warnings().forEach(function (warn) {
         console.warn(warn.toString());
