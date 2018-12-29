@@ -20,10 +20,7 @@ updated 2018-12-23
 [X] handle discconnect at END of a game (should be simple)
 [X] handle discconnect / reconnect DURING a game 
 [ ] what if its not a ctrl + r
-[ ] if server destroys a running game on accident (both disconnect+reconnect / shutdown) then try to recovver
-	- tell sockets to send a copy of the map and players
-	- if identical then set the room state
-
+	- WE DONT KNOW BUT HOPEFULLY
 
 [X] if you join a room while it is being used in a game show message + `New Room` button.
 
@@ -35,5 +32,5 @@ updated 2018-12-23
 
 [ ] polish + fx
 	[x] shakey rotate on cubes when they are painted
-	[ ] particles in the background maybe
+	~~~ particles in the background maybe ~~~
 	[ ] fade/animate between states n stuff

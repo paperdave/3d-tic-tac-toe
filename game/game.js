@@ -162,6 +162,7 @@ socket.on("back to lobby, guys and gals", () => {
 });
 socket.on("recover success", (game) => {
     console.log("RECOVER SUCCESS");
+    stop3d();
     
     players = game.players;
     turn = game.turn;

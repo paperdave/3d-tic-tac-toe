@@ -27,23 +27,13 @@
     <meta name="msapplication-TileImage" content="/res/icon/ms-icon-144x144.png">
     <meta name="theme-color" content="#79ceff">
 
-    <meta name="generator" content="humans & hard work (2018-12)">
+    <meta name="generator" content="humans & hard work (2018-12-01)">
 
     <meta content="3D Tic Tac Toe" property="og:title">
     <meta content="A web based 3D Tic Tac Toe Game. First to three in a row wins, play up to four players." property="og:description">
     <meta content="davecode.me" property="og:site_name">
-    <!-- <meta content='some cover image but i dont want one' property='og:image'> -->
     
     <style>
-
-        :root {
-            --red: rgb(255, 66, 66);
-            --green: rgb(66, 255, 113);
-            --blue: rgb(66, 69, 255);
-            --purple: rgb(186, 66, 255);
-            user-select: none;
-        }
-
         * {box-sizing: border-box;}
         body {
             margin: 0;
@@ -58,78 +48,6 @@
             color: white;
             font-family: Roboto, sans-serif;
         }
-        p {
-            text-align: center;
-            font-family: Roboto, sans-serif;
-            font-size: 1.35em;
-            color: white;
-        }
-        .center {
-            text-align: center;
-        }
-        input {
-            padding: 1em;
-            padding-left: 0;
-            text-indent: 1em;
-            color: white;
-            background: #17567a;
-            border: 3px solid #FFF;
-            border-radius: 3px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.356);
-        }
-        input::placeholder {
-            color: rgba(255, 255, 255, 0.63);
-        }
-        button {
-            margin-top: 0.5em;
-            padding: 0.5em;
-            color: black;
-            border: none;
-            background: #ffffff;
-            border-radius: 3px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.356);
-            cursor: pointer;
-        }
-        .almost-sides {
-            max-width: calc(100vw - 25px);
-            margin: auto;
-        }
-
-        #hud {
-            position: fixed;
-            font-family: Roboto, sans-serif;
-            top: 0;
-            right: 0;
-            color: white;
-            width: 100%;
-        }
-        #name-in-corner {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-        }
-
-        #join-url {
-            color: black;
-            background: white;
-            padding: 1.25em 1em;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-            width: min-content;
-            /* margin: 1.5em auto; */
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        #join-url-container:hover #join-url {
-            color: #17567a;
-            cursor: pointer;
-
-            transform: translateY(-3.5px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-        }
-        #join-url-container {
-            /* padding: 1.25em 1em; */
-            width: min-content;
-            margin: 1.5em auto;
-        }
         .bg {
             z-index: -1;
             position: fixed;
@@ -139,53 +57,34 @@
             height: 100vh;
             background: linear-gradient(0deg, #7992ff 0%, #79ceff 100%);
         }
-        .player-icon {
-            display: block;
-            width: 50px;
-            height: 50px;
-            background: white;
-            border-radius: 3px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-            opacity: 0.9;
-            margin: auto;
-            border: 2px solid black;
-        }
-        .player-info {
-            flex-grow: 1;
-        }
-        .players {
-            flex-direction: row;
-            display: flex;
+        
+        #mobile-swipe-to-refresh {
+            position: fixed;
+            top: 0;
+            height: 0.5in;
             width: 100%;
-            margin: auto;
-            margin-bottom: 2em;
+            z-index: 100;
         }
-        .player-label {
+
+        .HIDDENJS{display:none;}
+
+        p {
+            text-align: center;
             font-family: Roboto, sans-serif;
+            font-size: 1.35em;
             color: white;
-            margin-top: 0.75em;
+        }
+        .center {
             text-align: center;
         }
-        .unjoined .player-label {
-            opacity: 0.4;
+        #hud {
+            position: fixed;
+            font-family: Roboto, sans-serif;
+            top: 0;
+            right: 0;
+            color: white;
+            width: 100%;
         }
-        .unjoined .player-icon {
-            opacity: 0.7;
-        }
-
-        .player-info:not(.unjoined) > .red {
-            background: var(--red);
-        }
-        .player-info:not(.unjoined) > .green {
-            background: var(--green)
-        }
-        .player-info:not(.unjoined) > .blue {
-            background: var(--blue);
-        }
-        .player-info:not(.unjoined) > .purple {
-            background: var(--purple);
-        }
-
         @keyframes a {
             to {opacity: 1;}
         }
@@ -204,22 +103,6 @@
             line-height: 48px;
             font-size: 16px;
         }
-        .uhoh {
-            font-weight: bold;
-            font-size: 1.8em;
-        }
-
-        .a-slightly-smaller-font {
-            font-size: 1.1em;
-        }
-        canvas#game-surface {
-            transition: opacity 500ms linear;
-            position: fixed;
-            top: 0;
-        }
-        .invisible {
-            opacity: 0;
-        }
         .bottom-hud, .end-game-controls {
             height: 6em;
             width: 100%;
@@ -235,74 +118,9 @@
             text-align: center;
             z-index: 100;
         }
-        .end-game-controls button {
-            background: #7992ff;
-            color: white;
-        }
         .end-game-controls.show {
             transform: translateY(0);
             transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
-        }
-
-        .bh-player {
-            flex-grow: 1;
-            background:hsla(0, 0%, 0%, 0.4);
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-top: 3px solid;
-            transition: border-top-width 0.5s, background-color 0.5s;
-            will-change: border-top-width, background-color;
-        }
-        .bh-player.active {
-            border-top-width: 10px;
-            background:hsla(0, 0%, 0%, 0.5);
-
-        }
-        .bh-player.red {
-            border-top-color: var(--red);
-        }
-        .bh-player.green {
-            border-top-color: var(--green);
-        }
-        .bh-player.blue {
-            border-top-color: var(--blue);
-        }
-        .bh-player.purple {
-            border-top-color: var(--purple);
-        }
-        .bh-player.disabled {
-            display: none;
-        }
-
-        button[disabled] {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .top-status {
-            position: fixed;
-            width: 100%;
-            height: 20%;
-            line-height: 20vh;
-        }
-
-        #mobile-swipe-to-refresh {
-            position: fixed;
-            top: 0;
-            height: 0.5in;
-            width: 100%;
-            z-index: 100;
-        }
-
-        .HIDDENJS{display:none;}
-
-        a {
-            color:white;
-        }
-        a:active {
-            color:#EEE;
         }
     </style>
 </head>
@@ -468,9 +286,11 @@
         </a>
     </div>
     
-    <script>Array.from(document.getElementsByClassName("show:no-js")).forEach(x => x.classList.add("HIDDENJS"));Array.from(document.getElementsByClassName("show:loading")).forEach(x => x.classList.remove("HIDDENJS"));</script>
+    <script>Array.from(document.getElementsByClassName("show:no-js")).forEach(x => x.remove());Array.from(document.getElementsByClassName("show:loading")).forEach(x => x.classList.remove("HIDDENJS"));</script>
 
     <!-- START SCRIPTS -->
+    <link rel="stylesheet" href="style.css">
+
     <script src="/socket.io/socket.io.js"></script>
 
     <script src="./lib/three.js"></script>

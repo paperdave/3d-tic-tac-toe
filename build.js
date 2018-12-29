@@ -1,12 +1,14 @@
-const minify = true;
-
 const fs = require("fs-extra");
 const minifyHTML = require("html-minifier").minify;
 const UglifyJS = require("uglify-es");
 const chalk = require("chalk");
+const cssnano = require("cssnano");
+
+const start_time = Date.now();
 
 if(fs.pathExistsSync("./dist")) fs.removeSync("./dist");``
 fs.mkdirsSync("./dist");
+fs.copySync("./game/res", "./dist/res");
 
 // javascript payload
 let js_playload;
@@ -28,6 +30,10 @@ files.forEach(file => {
 
 let result = UglifyJS.minify(code, {
     warnings: true,
+    sourceMap: {
+        filename: "puzzle-game.js",
+        url: "puzzle-game.js.map"
+    }
 });
 
 if (result.error) {
@@ -49,12 +55,18 @@ if (result.error) {
 }
 
 fs.writeFileSync("./dist/puzzle-game.js", js_playload);
+fs.writeFileSync("./dist/puzzle-game.js.map", result.map);
 
 // index.html
+let loader = "(" + require("./game/loader.js").toString() + ")(document)";
+loader = UglifyJS.minify(loader, {
+    warnings: true,
+}).code;
+
 let indexContent = fs.readFileSync("./game/index.html").toString();
 let css = indexContent.replace(/((.|\n|\r)*)<style>((.|\n|\r)*)\<\/style\>((.|\n|\r)*)/g,"$3");
-indexContent = indexContent.replace(/\<style>((.|\n|\r)*)\<\/style\>/g,"!!!replace with processed css!!!");
-indexContent = indexContent.replace(/\<\!-- START SCRIPTS --\>((.|\n|\r)*)\<\!-- END SCRIPTS --\>/g,"<script src='puzzle-game.js'></script>");
+indexContent = indexContent.replace(/\<style>((.|\n|\r)*)\<\/style\>/g, "!!!replace with processed css!!!");
+indexContent = indexContent.replace(/\<\!-- START SCRIPTS --\>((.|\n|\r)*)\<\!-- END SCRIPTS --\>/g,"<script>" + loader + "</script>");
 
 var autoprefixer = require('autoprefixer');
 var postcss = require('postcss');
@@ -91,5 +103,10 @@ postcss([autoprefixer]).process(css, {from: undefined}).then(function (result) {
     });
 
     fs.writeFileSync("./dist/index.html", indexContent);
+    
+    postcss([autoprefixer, cssnano]).process(fs.readFileSync("./game/style.css").toString(), { from: undefined }).then(result => {
+        fs.writeFileSync("./dist/style.css", result.css);
+        const ms = Date.now() - start_time;
+        console.log(chalk.green("Finished! ") + "Took " + ms + "ms")
+    });
 });
-
