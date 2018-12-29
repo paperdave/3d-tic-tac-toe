@@ -28,7 +28,9 @@ const express = require('express');
 const app = express();
 const io = require('socket.io')();
 
-app.use(express.static(path.join(__dirname, "../", process.env.STATIC_FOLDER)));
+app.use(express.static(path.join(__dirname, "../", process.env.STATIC_FOLDER), {
+    maxAge: "12h"
+}));
 
 const sockets = {};
 const rooms = {};
@@ -156,7 +158,6 @@ function leaveRoom(socket, room) {
     if (rooms[room].isStarted) {
         rooms[room].players = rooms[room].players.map(x => {
             if(x.id === socket.id) {
-                console.log("putting socket " + socket.id.substring(0,6) + "... into 'missing' mode.");
                 return { missing: true, name: socket.name, id: socket.id, secret: socket.secret };
             } else {
                 return x;
@@ -214,8 +215,6 @@ function attemptRejoinRoom(socket, recoverData) {
 
     // find the player in the room
     var index = -1;
-
-    console.log(rooms[recoverData.room].players.map(SocketToPlayer));
 
     rooms[recoverData.room].players.forEach((player, i) => {
         if (player.missing && player.id === recoverData.id && player.secret === recoverData.secret) {

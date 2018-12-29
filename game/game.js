@@ -161,9 +161,9 @@ socket.on("back to lobby, guys and gals", () => {
     stop3d();
 });
 socket.on("recover success", (game) => {
-    console.log("RECOVER SUCCESS");
+    // console.log("RECOVER SUCCESS");
     stop3d();
-    
+
     players = game.players;
     turn = game.turn;
     our_index = game.index;
@@ -183,7 +183,7 @@ socket.on("recover success", (game) => {
     }
 });
 socket.on("recover failed", () => {
-    console.log("RECOVER FAILED");
+    // console.log("RECOVER FAILED");
     recovering = false;
 
     sessionStorage.clear();
@@ -334,7 +334,6 @@ if (room === "help+info") {
     setState('help');
     socket.disconnect();
 } else {
-    console.log("a")
     $(".if-previous-room").show();
 
     if (recovering) {
@@ -524,7 +523,7 @@ function GameCube(x, z, y) {
 
     //Create outline object
     var outline_geo = MESH(y);
-    var outline_mat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+    var outline_mat = new THREE.MeshBasicMaterial({ color: 0x000000, side: 1 /*THREE.BackSide*/ });
     var outline = new THREE.Mesh(outline_geo, outline_mat);
     outline.scale.multiplyScalar(1.125 * 0.75);
     group.add(outline);

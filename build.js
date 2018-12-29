@@ -5,18 +5,19 @@ const chalk = require("chalk");
 const cssnano = require("cssnano");
 
 const start_time = Date.now();
+console.log("Starting Build");
 
 if(fs.pathExistsSync("./dist")) fs.removeSync("./dist");``
 fs.mkdirsSync("./dist");
 fs.copySync("./game/res", "./dist/res");
 
 // javascript payload
-let js_playload;
+let puzzlegame;
 const files = [
     "./node_modules/socket.io-client/dist/socket.io.js",
     "./game/lib/lib.js",
     "./game/lib/copy.js",
-    "./game/lib/three.js",
+    "./game/lib/three.production.js",
     "./game/lib/OrbitControlsSmooth.js",
     "./game/win-detect.js",
     "./game/game.js"
@@ -25,14 +26,13 @@ const files = [
 let code = {}
 
 files.forEach(file => {
-    code[file.replace("./game/", "./")] = fs.readFileSync(file).toString();
+    code[file.replace("./game/", "./src/")] = fs.readFileSync(file).toString();
 });
 
 let result = UglifyJS.minify(code, {
     warnings: true,
-    sourceMap: {
-        filename: "puzzle-game.js",
-        url: "puzzle-game.js.map"
+    mangle: {
+        toplevel: true
     }
 });
 
@@ -51,10 +51,12 @@ if (result.error) {
         });
     }
 
-    js_playload = result.code;
+    puzzlegame = result.code;
 }
 
-fs.writeFileSync("./dist/puzzle-game.js", js_playload);
+// puzzlegame = "eval(`" + puzzlegame.replace(/function/g,"✔") + "`.replace(/✔/g,'function'))";
+
+fs.writeFileSync("./dist/puzzle-game.js", puzzlegame);
 fs.writeFileSync("./dist/puzzle-game.js.map", result.map);
 
 // index.html
