@@ -1,6 +1,8 @@
 # 3D Tic Tac Toe
 Three dimensional tic tac toe, with up to four players!
 
+latest build is [here](https://ttt.davecode.me/) on my site
+
 ## how to setup stuff
 1. install nodejs (and npm)
 1. clone repo
