@@ -1,6 +1,8 @@
 # 3D Tic Tac Toe
 Three dimensional tic tac toe, with up to four players!
 
+latest build is [here](https://ttt.davecode.me/) on my site
+
 ## how to setup stuff
 1. install nodejs (and npm)
 1. clone repo
@@ -25,4 +27,6 @@ theres a `ecosystem.config.js`, which has information to deploy to my local test
 - keep simple
 
 ## outcome
-[project is still work in progress, we will add this at the end.]
+i really love the result of this project. near the end I realized something: three.js is very large. 500kb+ minified. that one thing made the entire program take more time to load. other than that i really like how i was able to make a secure* socket server to make it so anyone can simply load up their browser and play a game, and nothing else needed. no account, sign up, just send a url and you are connected.
+
+it would be really cool if there was the ability to spectate games, or play with more than four people. or even 4x4 grids.
