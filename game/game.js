@@ -321,7 +321,6 @@ joinurl.on("click", function handler() {
         setTimeout(() => {
             joinurl.style.color = "";
             joinurl.innerHTML = location.href;
-            copytextshown = false; 
             setTimeout(() => {
                 copytextshown = false; 
             }, 200);
