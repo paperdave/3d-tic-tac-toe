@@ -34,7 +34,7 @@ module.exports = {
       host : 'club',
       ref  : 'origin/master',
       repo : 'git@github.com:imdaveead/3d-tic-tac-toe.git',
-      path : '/home/dave/programs/ttt',
+      path : '/home/dave/app/ttt',
       'post-deploy': 'npm install -D && node ./build.js && pm2 reload ecosystem.config.js --env production',
       env: {
         "NODE_ENV": "production",
