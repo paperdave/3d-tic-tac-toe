@@ -17,13 +17,13 @@ const files = [
     "./node_modules/socket.io-client/dist/socket.io.js",
     "./game/lib/lib.js",
     "./game/lib/copy.js",
-    "./game/lib/three.production.js",
+    "./game/lib/three.js",
     "./game/lib/OrbitControlsSmooth.js",
     "./game/win-detect.js",
     "./game/game.js"
-]
+];
 
-let code = {}
+let code = {};
 
 files.forEach(file => {
     code[file.replace("./game/", "./src/")] = fs.readFileSync(file).toString();
