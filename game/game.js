@@ -157,10 +157,6 @@ socket.on("paint", (pos, who) => {
     
     updateGameHudUI();
 });
-socket.on("back to lobby, guys and gals", () => {
-    setState("lobby");
-    stop3d();
-});
 socket.on("recover success", (game) => {
     // console.log("RECOVER SUCCESS");
     stop3d();
@@ -211,10 +207,8 @@ function updateLobbyUI() {
     // leader controls
     if (isLeader) {
         $("#start-game-section").show();
-        $(".restarts").show();
     } else {
         $("#start-game-section").hide();
-        $(".restarts").hide();
     }
 
     // woah! this says if we are allowed to start the game ✨
@@ -635,6 +629,7 @@ function stop3d() {
     turn = 0;
     allow3DClicks = false;
     gameWinner = -1;
+    winningState = null;
     map = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
     cubes = [...Array(3)].map(x => [...Array(3)].map(x => [...Array(3)].map(x => -1)));
 
@@ -831,7 +826,8 @@ function start3d() {
 }
 
 $(".restarts").on("click", () => {
-    socket.emit("restart");
+    setState("lobby");
+    stop3d();
 });
 
 $(".previous-room").on("click", () => {

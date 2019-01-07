@@ -95,9 +95,9 @@
             }
         }
         if (foundBlankSpace) {
-            return ["tie"];
-        } else {
             return [null];
+        } else {
+            return ["tie"];
         }
     }
     if (typeof module !== "undefined") {

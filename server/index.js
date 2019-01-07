@@ -267,26 +267,6 @@ function startRoom(socket, room) {
     rooms[room].turn = 0;
     rooms[room].isEnded = false;
 }
-function restartRoom(socket, room) {
-    // ignore if room is gone
-    if (!(room in rooms)) return console.log("[start] no room exist");
-
-    // ignore if room not started
-    if (!rooms[room].isStarted) return console.log("[start] started");
-
-    // ignore if not leader
-    if (rooms[room].leader.id !== socket.id) return console.log("[start] no leader");
-
-    rooms[room].isStarted = false;
-    rooms[room].players.forEach(sock => {
-        if(!sock.missing)
-            sock.emit("back to lobby, guys and gals");
-    });
-
-    delete rooms[room].map
-    delete rooms[room].turn;
-    delete rooms[room].isEnded;
-}
 function paintCube(socket, room, position) {
     // ignore if room is gone
     if (!(room in rooms)) return console.log("[paintCube] no room exist");
@@ -322,7 +302,11 @@ function paintCube(socket, room, position) {
     // win detec
     const winner = doTheWinDetect(rooms[room].map);
     if (winner[0] !== null) {
-        rooms[room].isEnded = true;
+        // reset room.
+        rooms[room].isStarted = false;
+        delete rooms[room].map
+        delete rooms[room].turn;
+        delete rooms[room].isEnded;
     }
 
     // notify
@@ -406,9 +390,6 @@ io.on("connection", (socket) => {
         ) return;
         
         paintCube(socket, room, pos);
-    });
-    socket.on("restart", () => {
-        restartRoom(socket, room);
     });
     socket.on("recover me", (recoverPayload) => {
         if(0
