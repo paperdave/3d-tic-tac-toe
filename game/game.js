@@ -460,6 +460,9 @@ function updateGameHudUI() {
             $(".top-status-winner").innerHTML = (index === our_index) ? "You Won" : (playerName + "'s Wins");
         }
     }
+    if (gameWinner === "tie") {
+        $(".top-status-winner").innerHTML = "It's a tie!";
+    }
     if(gameWinner !== -1) {
         $(".top-status-turn").hide();
         $(".top-status-winner").show();
@@ -485,14 +488,16 @@ function handleWinning() {
     let winner = doTheWinDetect(map);
     if(winner[0] !== null) {
         turn = -10
-        gameWinner = winner;
+        gameWinner = winner[0];
         updateGameHudUI();
-        sessionStorage.removeItem("recovery")
+        sessionStorage.removeItem("recovery");
         winningState = winner;
 
-        cubes[winner[1][0]][winner[1][2]][winner[1][1]].isWinningCube = true;
-        cubes[winner[2][0]][winner[2][2]][winner[2][1]].isWinningCube = true;
-        cubes[winner[3][0]][winner[3][2]][winner[3][1]].isWinningCube = true;
+        if(gameWinner !== "tie") {
+            cubes[winner[1][0]][winner[1][1]][winner[1][2]].isWinningCube = true;
+            cubes[winner[2][0]][winner[2][1]][winner[2][2]].isWinningCube = true;
+            cubes[winner[3][0]][winner[3][1]][winner[3][2]].isWinningCube = true;
+        }
 
         setTimeout(() => {
             $(".end-game-controls").classList.add("show");
