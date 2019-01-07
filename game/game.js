@@ -24,6 +24,7 @@ var isDragging = false;
 var showHelper = true;
 var recovering = false;
 var socket = io();
+var winningState = null;
 
 // var _realsocketemit = socket.emit;
 // socket.emit = function(ev, ...args) {
@@ -312,20 +313,21 @@ joinurl.on("click", function handler() {
     copytextshown = true;
     joinurl.style.width = joinurl.clientWidth + "px";
 
-    copyTextToClipboard(location.href);
-    
-    joinurl.innerHTML = "Copied!";
-    
-    setTimeout(() => {
-        joinurl.style.color = "transparent";
+    clipboard.writeText(location.href).then(() => {
+        joinurl.innerHTML = "Copied!";
+        
         setTimeout(() => {
-            joinurl.style.color = "";
-            joinurl.innerHTML = location.href;
+            joinurl.style.color = "transparent";
             setTimeout(() => {
-                copytextshown = false; 
-            }, 200);
-        }, 175);
-    }, 1500);
+                joinurl.style.color = "";
+                joinurl.innerHTML = location.href;
+                setTimeout(() => {
+                    copytextshown = false; 
+                }, 200);
+            }, 175);
+        }, 1500);
+    });
+    
 });
 
 // initial state
@@ -481,11 +483,16 @@ function handleMouseInput(x, y, z) {
 
 function handleWinning() {
     let winner = doTheWinDetect(map);
-    if(winner !== null) {
+    if(winner[0] !== null) {
         turn = -10
         gameWinner = winner;
         updateGameHudUI();
         sessionStorage.removeItem("recovery")
+        winningState = winner;
+
+        cubes[winner[1][0]][winner[1][2]][winner[1][1]].isWinningCube = true;
+        cubes[winner[2][0]][winner[2][2]][winner[2][1]].isWinningCube = true;
+        cubes[winner[3][0]][winner[3][2]][winner[3][1]].isWinningCube = true;
 
         setTimeout(() => {
             $(".end-game-controls").classList.add("show");
@@ -543,10 +550,16 @@ function GameCube(x, z, y) {
     var scale = 1;
 
     var painted = false;
+    self.isWinningCube = null;
 
     self.model = group;
     self.update = function() {
-        scale = lerp(scale, hover ? 1.15 : 1, painted ? 0.1 : 0.7);
+        if (winningState !== null) {
+           
+            scale = lerp(scale, self.isWinningCube ? 1.125 : 0.55, 0.1);
+        } else {
+            scale = lerp(scale, hover ? 1.15 : 1, painted ? 0.1 : 0.7);
+        }
         
         group.scale.setScalar(scale );
     }

@@ -29,7 +29,8 @@ const app = express();
 const io = require('socket.io')();
 
 app.use(express.static(path.join(__dirname, "../", process.env.STATIC_FOLDER), {
-    maxAge: "12h"
+    // maxAge: "12h"
+    maxAge: "0s"
 }));
 
 const sockets = {};
@@ -320,7 +321,7 @@ function paintCube(socket, room, position) {
 
     // win detec
     const winner = doTheWinDetect(rooms[room].map);
-    if (winner !== null) {
+    if (winner[0] !== null) {
         rooms[room].isEnded = true;
     }
 
